@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAEC Subjects</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background 0.5s ease-in-out;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .exam-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .exam-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 5px;
+      object-fit: cover;
+    }
+    .back-button {
+      background-color: #731c70;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .subject-item {
+      padding: 15px;
+      background-color: #e0e0e0;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .subject-item:hover {
+      background-color: #ccc;
+    }
+    .error, .no-data {
+      color: red;
+      font-size: 16px;
+    }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .modal-button {
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      width: 45%;
+    }
+    .start-button {
+      background-color: #28a745;
+      color: white;
+    }
+    .cancel-button {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .subscribe-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #efefed;
+      color: rgb(46, 34, 34);
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button onclick="goBack()" class="back-button">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <button onclick="goToSubscription()" class="subscribe-button">Subscribe</button>
+    <div class="exam-header">
+      <img id="exam-image" class="exam-image" src="" alt="Exam Image">
+      <h1 id="exam-name">WAEC Subjects</h1>
+    </div>
+    <div id="subjects-container">
+      <p id="loading-message">Loading subjects...</p>
+    </div>
+  </div>
+
+  <!-- Modal for Exam Instructions -->
+  <div id="exam-modal" class="modal">
+    <div class="modal-content">
+      <h2>Exam Instructions</h2>
+      <p>Please read the instructions carefully before starting the exam.</p>
+      <ul style="text-align: left;">
+        <li>Ensure you have a stable internet connection.</li>
+        <li>Do not of our device during the exam.</li>
+        <li>The exam will be submitted automatically when the is exhausted.</li>
+        <li>Please manage your time carefully.</li>
+        <li>You can use plain sheet to answer the theory.</li>
+
+      </ul>
+      <div class="modal-buttons">
+        <button class="modal-button start-button" id="start-exam">Start</button>
+        <button class="modal-button cancel-button" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    //const API_URL = 'http://0.0.0.0:8000/api';
+    const API_URL = 'https://api.liteupper.com/api';
+
+    let selectedSubjectId = null;
+
+    function checkAuthentication() {
+      const token = JSON.parse(localStorage.getItem('authToken'));
+      if (!token) {
+        window.location.href = 'login.html';
+      }
+      return token;
+    }
+
+    async function fetchWAECSubjects() {
+      const token = checkAuthentication();
+      const loadingMessage = document.getElementById('loading-message');
+      try {
+        const response = await fetch(`${API_URL}/waec-subjects/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token.access}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load subjects.');
+        }
+
+        loadingMessage.style.display = 'none';
+
+        // Set exam name
+        document.getElementById('exam-name').innerText = data.exam_name;
+
+        // Set exam image
+        if (data.exam_image) {
+          document.getElementById('exam-image').src = data.exam_image;
+          document.body.style.backgroundImage = `url('${data.exam_image}')`;
+        }
+
+        // Populate subjects
+        const subjectsContainer = document.getElementById('subjects-container');
+        subjectsContainer.innerHTML = '';
+
+        if (data.subjects.length > 0) {
+          data.subjects.forEach(subject => {
+            const subjectDiv = document.createElement('div');
+            subjectDiv.className = 'subject-item';
+            subjectDiv.innerText = subject.name;
+            subjectDiv.onclick = () => openModal(subject.id);
+            subjectsContainer.appendChild(subjectDiv);
+          });
+        } else {
+          subjectsContainer.innerHTML = '<p class="no-data">No subjects available for WAEC exam.</p>';
+        }
+      } catch (error) {
+        loadingMessage.style.display = 'none';
+        document.getElementById('subjects-container').innerHTML = `<p class="error">${error.message}</p>`;
+      }
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function goToSubscription() {
+      window.location.href = "Subscriptions.html";
+    }
+
+    function openModal(subjectId) {
+      selectedSubjectId = subjectId;
+      document.getElementById('exam-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('exam-modal').style.display = 'none';
+    }
+
+    function navigateToSubject() {
+      if (selectedSubjectId) {
+        window.location.href = `Exam.html?subjectId=${selectedSubjectId}`;
+      }
+    }
+
+    document.getElementById('start-exam').addEventListener('click', navigateToSubject);
+    
+    fetchWAECSubjects();
+  </script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+
+        .main-exam-screen {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .timer {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            position: fixed;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-top: -30px;
+        }
+
+        .yellow {
+            color: orange;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .question-card {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .option {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #ffffff;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.3s ease-in-out;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .option:hover {
+            background: #f1f1f1;
+        }
+
+        .selected {
+            background: #d4edda !important;
+            border: 1px solid #28a745;
+        }
+
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #863b7f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .submit-button:hover {
+            background: #452c47;
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-buttons {
+            margin-top: 15px;
+        }
+
+        .modal-buttons button {
+            margin: 5px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .view-corrections { background: #28a745; color: white; }
+        .theory-exam { background: #772671; color: white; }
+        .cancel { background: #dc3545; color: white; }
+        .theory-exams { background: #6b2768; color: white; }
+        .cancels { background: #dc3545; color: white; }
+
+        /* Styling for Correct and Wrong Answers */
+        .wrong-answer { background: #ffcccc !important; border: 1px solid red; }
+        .correct-answer { background: #ccffcc !important; border: 1px solid green; }
+    </style>
+</head>
+<body>
+    <div class="main-exam-screen">
+        <div id="timer" class="timer">Time Left: 50:00</div>
+        <div id="questions-container"></div>
+        <button id="submit-button" class="submit-button">Submit</button>
+    </div>
+    <div class="main-exam-screen">
+        <div id="view-corrections">
+        </div>
+        <button class="theory-exam">Proceed to Theory Exam</button>
+        <button class="cancel">Cancel</button>
+    </div>
+
+    <!-- Modal for Exam Result -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+        <h2>Exam Submitted</h2>
+            <p>Your Total Score: <span id="score"></span></p>
+            <p>Total Questions: <span id="total-questions"></span></p>
+            <div class="modal-buttons">
+                <button class="view-corrections">View Corrections</button>
+                <button class="theory-exams">Proceed to Theory Exam</button>
+                <button class="cancels">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        //const API_URL = 'http://0.0.0.0:8000/api';
+        const API_URL = 'https://api.liteupper.com/api';
+        const token = JSON.parse(localStorage.getItem('authToken'));
+
+        if (!token || !token.access) {
+            window.location.href = 'login.html';
+        }
+
+        function getSubjectIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get("subjectId");
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const subjectId = getSubjectIdFromURL();
+            if (!subjectId) {
+                alert("Subject ID not found!");
+                return;
+            }
+
+            let timeLeft = 50 * 60;
+            let timerInterval;
+            let isPaused = false;
+            let selectedOptions = {};
+            
+
+            function updateTimerDisplay() {
+                const timerElement = document.getElementById('timer');
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerElement.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                
+                if (timeLeft <= 60) {
+                    timerElement.className = 'timer red';
+                } else if (timeLeft <= 300) {
+                    timerElement.className = 'timer yellow';
+                } else {
+                    timerElement.className = 'timer';
+                }
+            }
+
+            function startTimer() {
+                updateTimerDisplay();
+                timerInterval = setInterval(() => {
+                    if (!isPaused) {
+                        if (timeLeft > 0) {
+                            timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            clearInterval(timerInterval);
+                            submitExam(); // Auto-submit when time reaches 0
+                        }
+                    }
+                }, 1000);
+            }
+
+            function toggleTimer() {
+                isPaused = !isPaused;
+                const pauseButton = document.getElementById("pause-button");
+                pauseButton.textContent = isPaused ? "Resume" : "Pause";
+            }
+
+            async function fetchQuestions() {
+                try {
+                    
+                    const response = await fetch(`${API_URL}/desktop-exam-questions/${subjectId}/`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token.access}`, 
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (response.status === 403) {
+                        alert("No active plan. Please subscribe to continue.");
+                        window.location.href = "Subscriptions.html";
+                        return;
+                    }
+
+                    const data = await response.json(); // Parse JSON once
+
+                    if (!response.ok) {
+                        throw new Error(data.detail || "An error occurred");
+                    }
+
+
+                    const questions = data; // Use the parsed JSON 
+                    
+                    
+
+                    const container = document.getElementById('questions-container');
+                    container.innerHTML = '';
+
+                    if (!questions || questions.length === 0) {
+                        container.innerHTML = '<p>No questions available.</p>';
+                        return;
+                    }
+
+                    questions.forEach((question, index) => {
+                        const questionCard = document.createElement('div');
+                        questionCard.className = 'question-card';
+                        questionCard.innerHTML = `
+                            ${question.Eq_img ? `<img src="${question.Eq_img}" alt="Question Image" style="max-width: 300px; display: block; margin-top: 10px;">` : ''}
+                            <p><strong>Question ${index + 1}:</strong> ${question.text}</p>
+                            
+                            <div id="options-${question.id}">
+                                ${question.options.map(option => `
+                                    <button class="option" data-question="${question.id}" data-option="${option.id}">
+                                        ${option.option_letter}. ${option.text}
+                                        ${option.Eoption_img ? `<img src="${option.Eoption_img}" alt="Option Image" style="max-width: 100px; display: block; margin-top: 5px;">` : ''}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        `;
+                        container.appendChild(questionCard);
+                    });
+
+                    document.querySelectorAll('.option').forEach(button => {
+                        button.addEventListener('click', function () {
+                            const questionId = this.getAttribute('data-question');
+                            const optionId = this.getAttribute('data-option');
+
+                            selectedOptions[questionId] = optionId;
+                     
+                            console.log('Selected:', selectedOptions);
+
+                            document.querySelectorAll(`#options-${questionId} .option`).forEach(opt => opt.classList.remove('selected'));
+                            this.classList.add('selected');
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Error fetching questions:', error);
+                    isPaused = true;
+                    alert("Error loading questions!");
+                }
+            }
+
+            async function submitExam() {
+                console.log('Submitting answers:', selectedOptions);
+                isPaused = true;
+                clearInterval(timerInterval);
+                try {
+                    document.getElementById("submit-button").disabled = true;
+                    const response = await fetch(`${API_URL}/desktop-exam-submit/${subjectId}/submit/`, {  
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token.access}`, 
+                            'Content-Type': 'application/json' 
+                        },
+                        body: JSON.stringify({ answers: selectedOptions })
+                    });
+
+                    if (!response.ok) throw new Error("Failed to submit exam");
+
+                    const result = await response.json();
+                    document.getElementById('score').innerText = result.correct_count;
+                    document.getElementById('total-questions').innerText = result.total_questions;
+                    document.getElementById('result-modal').style.display = 'flex';
+                    
+
+                    document.querySelector('.view-corrections').addEventListener('click', () => {
+                        showCorrections(result.correct_answers, result.failed_answers);
+                    });
+
+                    document.querySelector('.theory-exam').addEventListener('click', () => {
+                        window.location.href = `Theory.html?subjectId=${subjectId}`;
+                    });
+
+                    document.querySelector('.cancel').addEventListener('click', () => {
+                        window.location.href = 'Subjects.html';
+                    });
+
+
+                    document.querySelector('.theory-exams').addEventListener('click', () => {
+                        window.location.href = `Theory.html?subjectId=${subjectId}`;
+                    });
+
+                    document.querySelector('.cancels').addEventListener('click', () => {
+                        window.location.href = 'Subjects.html';
+                    });
+
+                } catch (error) {
+                    console.error('Error submitting exam:', error);
+                    alert("Error submitting exam!");
+                }
+            }
+
+
+            // View corrections button
+            const viewCorrectionsButton = document.querySelector('.view-corrections');
+            viewCorrectionsButton.addEventListener('click', function () {
+                showCorrections();
+            });
+
+            // Function to display the corrections in the modal
+            async function showCorrections() {
+                try {
+                    const response = await fetch(`${API_URL}desktop-exam-submit/${subjectId}/submit/`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token.access}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ answers: selectedOptions || ''}) // Send user-selected answers
+                    });
+
+                    const result = await response.json();
+                    console.log('Results:', result);
+
+                    if (!response.ok) {
+                        alert('Error: Unable to fetch corrections');
+                        return;
+                    }
+                    if (response.length === 0) {
+                        container.innerHTML += '<p>All answers are correct! 🎉</p>';
+                        return;
+                    }
+
+                    const { correct_count, total_questions, results } = result;
+                    document.getElementById('score').textContent = `${correct_count} out of ${total_questions}`;
+                    document.getElementById('total-questions').textContent = total_questions;
+                    
+
+                    // Show question-wise results
+                    const correctionsContainer = document.getElementById('view-corrections');
+                    document.getElementById('result-modal').style.display = 'none';
+                    document.getElementById('questions-container').style.display = 'none';
+                    
+                    
+                    correctionsContainer.innerHTML = '';
+
+                    results.forEach(item => {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.classList.add('question-card');
+                        resultDiv.innerHTML = `
+                        ${item.result === 'incorrect' ? `
+                            <p><strong>Question ${item.question_number}:</strong> ${item.question_text}</p>
+                            <p><strong>Result:</strong> ${item.result}</p>
+                            
+                                <p><strong>Your answer:</strong> ${item.selected_options || ''}</p>
+                                <p><strong>Correct answer:</strong> ${item.correct_options.join(', ')}</p>
+                            ` : ''}
+                        `;
+                        correctionsContainer.appendChild(resultDiv);
+                    });
+                    console.log('Results:', result);
+
+                    
+
+
+                } catch (error) {
+                    console.log('Error fetching corrections:', error);
+                }
+            }
+
+            document.getElementById('submit-button').addEventListener('click', submitExam);
+            
+            fetchQuestions();
+            startTimer();
+        });
+    </script>
+</body>
+</html>

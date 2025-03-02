@@ -1,0 +1,96 @@
+{
+  "name": "liteupper-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "public/electron.js",
+  "author": {
+    "name": "Liteupper",
+    "email": "liteupper@gmail.com"
+  },
+  "description": "LiteUpper WAEC Desktop App",
+  "devDependencies": {
+    "electron": "^34.3.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "cra-template": "1.2.0",
+    "electron-updater": "^6.3.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-native-web": "^0.19.13",
+    "react-scripts": "5.0.1"
+  },
+  "build": {
+    "appId": "com.liteupper.desktop",
+    "productName": "LiteUpper",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "build/**/*",
+      "build/electron.js",
+      "resources/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "linux": {
+      "category": "Utility",
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "maintainer": "liteupper@gmail.com"
+    },
+    "publish": [
+    {
+      "provider": "github",
+      "owner": "UC-BLACK1",
+      "repo": "Liteupper-Waec-Desktop",
+      "releaseType": "release"
+    }
+  ]
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "electron": "electron .",
+    "package": "electron-builder",
+    "package:win": "electron-builder --win",
+    "package:mac": "electron-builder --mac",
+    "package:linux": "electron-builder --linux"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

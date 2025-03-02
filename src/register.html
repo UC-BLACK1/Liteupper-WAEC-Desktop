@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - LiteUpper</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f4f4f4;
+    }
+
+    .register-container {
+      background-color: #ffffff;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .register-button {
+      background-color: #8b1978;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .register-button:hover {
+      background-color: #3f0f40;
+    }
+
+    .error-message {
+      color: red;
+      margin-bottom: 10px;
+    }
+
+    .login-link {
+      display: block;
+      margin-top: 15px;
+      color: #771e7b;
+      text-decoration: none;
+    }
+
+    .login-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 80%;
+      max-width: 350px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content p {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .modal-button {
+      background-color: #8b1978;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .modal-button:hover {
+      background-color: #3f0f40;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-container">
+    <h1>Register</h1>
+    <div id="error-message" class="error-message" style="display: none;"></div>
+    <form id="register-form" onsubmit="handleRegister(event)">
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required placeholder="Enter your email">
+      </div>
+      <div class="input-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required placeholder="Enter your username">
+      </div>
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password">
+      </div>
+      <div class="input-group">
+        <label for="confirm-password">Confirm Password</label>
+        <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
+      </div>
+      <button type="submit" class="register-button" id="register-button">Register</button>
+    </form>
+    <a href="login.html" class="login-link">Already have an account? Login</a>
+  </div>
+
+  <!-- Modal Popup -->
+  <div id="success-modal" class="modal">
+    <div class="modal-content">
+      <p>A verification link has been sent to your email address.</p>
+      <p>Please check your email and click the link to verify your account.</p>
+      <button class="modal-button" onclick="redirectToLogin()">OK</button>
+    </div>
+  </div>
+
+  <script>
+    //const API_URL = 'http://0.0.0.0:8000/api'; // Replace with your actual API base URL
+    const API_URL = 'https://api.liteupper.com/api'
+    
+    async function handleRegister(event) {
+      event.preventDefault();
+
+      const registerButton = document.getElementById('register-button');
+      registerButton.textContent = 'Registering...';
+      registerButton.disabled = true;
+
+      const email = document.getElementById('email').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      const errorMessage = document.getElementById('error-message');
+
+      errorMessage.style.display = 'none';
+
+      if (password !== confirmPassword) {
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Passwords do not match';
+        resetButton();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/create-user/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, username, password, confirm_password: confirmPassword }),
+        });
+
+        if (response.ok) {
+          // Show the modal instead of alert and redirection
+          document.getElementById('success-modal').style.display = 'flex';
+        } else {
+          const errorData = await response.json();
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = errorData.error || 'Registration failed';
+        }
+      
+      } catch (error) {
+        console.error('Error:', error);
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'An error occurred. Please try again later.';
+      } finally {
+        resetButton();
+      }
+    }
+    function resetButton() {
+          const registerButton = document.getElementById('register-button');
+          registerButton.textContent = 'Register';
+          registerButton.disabled = false;
+        }
+
+    function redirectToLogin() {
+      window.location.href = 'login.html';
+    }
+
+    
+  </script>
+
+</body>
+</html>

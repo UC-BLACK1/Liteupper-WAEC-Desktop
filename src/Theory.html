@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theory Exam</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 50px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    #timer {
+      font-size: 20px;
+      font-weight: bold;
+      
+      margin-bottom: 20px;
+    }
+    .submit-btn {
+      background-color: #8f3073;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      width: 50%;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      text-align: center;
+      width: 80%;
+      max-width: 400px;
+    }
+    .popup button {
+      width: 100px;
+      padding: 10px;
+      margin: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .view-btn {
+      background-color: #733b71;
+      color: white;
+    }
+    .next-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    .answer {
+      display: none;
+      font-style: italic;
+      color: green;
+    }
+    .question-img {
+      max-width: 70%;
+      height: auto;
+      margin-top: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .answerImg {
+      display: none;
+      max-width: 70%;
+      height: auto;
+      margin-top: 10px;
+      justify-self: center;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    textarea:disabled {
+      background: #f0f0f0;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Theory Exam Demo</h1>
+    <p id="timer">Time Left: 2:00:00</p>
+
+    <div id="questions-container">
+      <p>Loading questions...</p>
+    </div>
+
+    <button class="submit-btn" onclick="submitExam()">Submit Exam</button>
+  </div>
+
+  <!-- Exam Completion Popup -->
+  <div id="completion-popup" class="popup">
+    <h2>Thank You for Taking the Exam!</h2>
+    <p>We appreciate you for using LiteUpper.</p>
+    <button class="view-btn" onclick="showAnswers()">View Answers</button>
+    <button class="next-btn" onclick="goToNext()">Next</button>
+  </div>
+
+  <script>
+    //const API_URL = 'http://0.0.0.0:8000/api';
+    const API_URL = 'https://api.liteupper.com/api';
+    
+    let timeLeft = 7200; // 2 hours in seconds
+    let timerInterval;
+
+    function getToken() {
+      return JSON.parse(localStorage.getItem('authToken'));
+    }
+
+    function startTimer() {
+      const timerElement = document.getElementById("timer");
+      timerInterval = setInterval(() => {
+        let hours = Math.floor(timeLeft / 3600);
+        let minutes = Math.floor((timeLeft % 3600) / 60);
+        let seconds = timeLeft % 60;
+
+        timerElement.innerText = `Time Left: ${hours}:${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+
+        if (timeLeft <= 300) { 
+          timerElement.style.color = "orange"; // Change to yellow at 5 mins
+        }
+        if (timeLeft <= 60) { 
+          timerElement.style.color = "red"; // Change to red at 60 seconds
+        }
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          submitExam();
+        }
+        timeLeft--;
+      }, 1000);
+    }
+
+    function getSubjectIdFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("subjectId");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const subjectId = getSubjectIdFromURL();
+        if (!subjectId) {
+            alert("Subject ID not found!");
+            return;
+        }
+
+        fetchTheoryQuestions(subjectId);
+    });
+
+    function fetchTheoryQuestions(subjectId) {
+        const token = getToken(); 
+
+        fetch(`${API_URL}/theory-questions/${subjectId}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token.access}`,
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            data.questions.forEach((q, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.innerHTML = `
+                    ${q.quesImg ? `<img src="${q.quesImg}" class="question-img" alt="Question Image">` : ''}
+                    <p><strong>Q${index + 1}:</strong> ${q.question}</p>
+                    
+                    <textarea rows="10" cols="100" placeholder="Write your answer..." id="textarea${index}"></textarea>
+                    <p class="answer" id="answer${index}"><strong>Answer:</strong> ${q.answer}</p>
+                    ${q.ansImg ? `<img src="${q.ansImg}" class="answerImg" alt="Answer Image">` : ''}
+                    <hr>
+                `;
+                container.appendChild(questionElement);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching questions:', error);
+            document.getElementById('questions-container').innerHTML = '<p>Error loading questions.</p>';
+        });
+    }
+
+    function submitExam() {
+      clearInterval(timerInterval); // Stop the timer
+      document.getElementById("completion-popup").style.display = "block";
+
+      const submitButton = document.querySelector(".submit-btn");
+      submitButton.innerText = "Next Exam";
+      submitButton.style.backgroundColor = "#733b71"; // Change color to blue
+      submitButton.onclick = goToNext;
+    }
+
+    function showAnswers() {
+      document.querySelectorAll('.answer').forEach(answer => {
+        answer.style.display = 'block';
+      });
+
+      document.querySelectorAll('.answerImg').forEach(answer => {
+        answer.style.display = 'block';
+      });
+
+      document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.disabled = true; // Disable textarea after showing answers
+      });
+
+      document.getElementById("completion-popup").style.display = "none"; 
+    }
+
+    function goToNext() {
+      window.location.href = "Subjects.html"; 
+    }
+
+    window.onload = function() {
+      startTimer();
+    };
+  </script>
+
+</body>
+</html>

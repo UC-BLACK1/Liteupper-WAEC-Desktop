@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - LiteUpper</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f4f4f4;
+    }
+
+    .login-container {
+      background-color: #ffffff;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .password-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 35px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #555;
+    }
+
+    .toggle-password:hover {
+      color: #000;
+    }
+
+    .login-button {
+      background-color: #8b1978;
+      color: white;
+      padding: 10px 15px;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .login-button:hover {
+      background-color: #3f0f40;
+    }
+
+    .error-message {
+      color: red;
+      margin-bottom: 10px;
+    }
+
+    .register-link {
+      display: block;
+      margin-top: 15px;
+      color: #771e7b;
+      text-decoration: none;
+    }
+
+    .register-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #8b1978;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .modal button:hover {
+      background-color: #3f0f40;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Login</h1>
+    <div id="error-message" class="error-message" style="display: none;"></div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="input-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required placeholder="Enter your username">
+      </div>
+      <div class="input-group">
+        <label for="password">Password</label>
+        <div class="password-container">
+          <input type="password" id="password" name="password" required placeholder="Enter your password">
+          <span class="toggle-password" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      <button type="submit" class="login-button" id="login-button">Login</button>
+    </form>
+    <a href="register.html" class="register-link">Don't have an account? Register</a>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <p>Your email is not verified and a link is sent to your email. Please check your email and click the link to verify your account.</p>
+      <button onclick="redirectToLogin()">OK</button>
+    </div>
+  </div>
+
+  <script>
+    //const API_URL = 'http://0.0.0.0:8000/api'; // Replace with your actual API base URL
+    const API_URL = 'https://api.liteupper.com/api'
+    
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const loginButton = document.getElementById('login-button');
+      loginButton.textContent = 'Logging in...';
+      loginButton.disabled = true;
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_URL}/login-user/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('authToken', JSON.stringify(data.token));
+
+          if (data.is_afliate === null || data.is_afliate === undefined) {
+            window.location.href = 'FirstUpdateProfile.html'; // Redirect to update profile
+          } else {
+            window.location.href = 'Subjects.html'; // Redirect to subjects page
+          }
+        } else {
+          const errorData = await response.json();
+          if (errorData.detail === "Account is not active") {
+            showModal();
+          } else {
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('error-message').textContent = errorData.error || 'Invalid login credentials';
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('error-message').style.display = 'block';
+        document.getElementById('error-message').textContent = 'An error occurred. Please try again later.';
+      } finally {
+        resetButton();
+      }
+    }
+
+    function resetButton() {
+      const loginButton = document.getElementById('login-button');
+      loginButton.textContent = 'Login';
+      loginButton.disabled = false;
+    }
+
+    function togglePassword() {
+      const passwordField = document.getElementById('password');
+      const toggleIcon = document.querySelector('.toggle-password');
+
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.textContent = '👁️‍🗨️';
+      } else {
+        passwordField.type = 'password';
+        toggleIcon.textContent = '👁️';
+      }
+    }
+
+    function showModal() {
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function redirectToLogin() {
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+</head>
+<body style="background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; font-family: 'Poppins', sans-serif;">
+
+    <div style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); text-align: center; max-width: 400px; width: 100%;">
+        
+
+        <label style="font-size: 14px; font-weight: 600; color: #333; text-align: left; display: block; margin: 10px 0 5px;">Country</label>
+        <select id="country" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; background: #fff;">
+            <option value="">----Select your country----</option>
+        </select>
+
+        <label style="font-size: 12px; color: #666; margin-top: 10px; display: block;">You can proceed without Referral ID</label>
+
+        <div>
+            <label style="font-size: 14px; font-weight: 600; color: #333; text-align: left; display: block; margin: 10px 0 5px;">Referral ID (optional)</label>
+            <input type="text" id="promoCode" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; background: #fff;">
+        </div>
+
+        <button onclick="handleUpdate()" style="width: 100%; padding: 12px; background: #2a9d8f; color: #fff; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 15px;">
+            Next
+        </button>
+    </div>
+
+    <script>
+        //const API_URL = 'http://0.0.0.0:8000/api'; // Replace with your API URL
+        const API_URL = 'https://api.liteupper.com/api';
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            const authToken = JSON.parse(localStorage.getItem('authToken'));
+            if (authToken) {
+                fetchCountries(authToken);
+            }
+        });
+
+        async function fetchCountries(authToken) {
+            try {
+                const response = await fetch(`${API_URL}/admin/countries/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken.access}`,
+                        'Content-Type': 'application/json'
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const countrySelect = document.getElementById('country');
+                    data.forEach(country => {
+                        const option = document.createElement('option');
+                        option.value = country.id;
+                        option.textContent = country.name;
+                        countrySelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to fetch countries');
+                }
+            } catch (error) {
+                console.error('Error fetching countries:', error);
+            }
+        }
+
+        async function handleUpdate() {
+            const authToken = JSON.parse(localStorage.getItem('authToken'));
+            const country = document.getElementById('country').value;
+            const promoCode = document.getElementById('promoCode').value;
+
+            if (!country) {
+                alert('Please select your country.');
+                return;
+            }
+
+            const updatedData = {
+                country: country,
+                promoCode: promoCode,
+                is_afliate: false,
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/student/update/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken.access}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedData),
+                });
+
+                if (response.ok) {
+                    window.location.href = 'SecUpdateProfile.html';
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update profile. Please try again later.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update profile. Please try again later.');
+            }
+        }
+    </script>
+
+</body>
+</html>
