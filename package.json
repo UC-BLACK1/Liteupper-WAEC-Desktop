@@ -27,8 +27,11 @@
       "output": "dist"
     },
     "files": [
+      "build/**/*",
+      "build/electron.js",
       "src/**/*",
       "public/**/*",
+      
       "resources/**/*",
       "package.json"
     ],
@@ -68,6 +71,7 @@
     "start": "electron .",
     "build": "electron-builder",
     "electron": "electron .",
+    "prebuild": "mkdir -p build && cp src/electron.js build/electron.js",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
