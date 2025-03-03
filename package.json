@@ -2,7 +2,7 @@
   "name": "liteupper-desktop",
   "version": "0.1.0",
   "private": true,
-  "main": "src/electron.js",
+  "main": "./build/electron.js",
   "author": {
     "name": "Liteupper",
     "email": "liteupper@gmail.com"
@@ -28,22 +28,22 @@
     },
     "files": [
       "build/**/*",
-      "build/electron.js",
       "src/**/*",
+      "assets/**/*",
       "public/**/*",
       
       "resources/**/*",
       "package.json"
     ],
     "win": {
-      "icon": "src/icon.ico",
+      "icon": "assets/icon.ico",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "mac": {
-      "icon": "src/icon.icns",
+      "icon": "assets/icon.icns",
       "target": [
         "dmg",
         "zip"
@@ -51,7 +51,7 @@
     },
     "linux": {
       "category": "Utility",
-      "icon": "src/icon.png",
+      "icon": "assets/icon.png",
       "target": [
         "AppImage",
         "deb"
