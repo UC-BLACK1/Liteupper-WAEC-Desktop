@@ -27,7 +27,7 @@
       "output": "dist"
     },
     "files": [
-      "build/**/*",
+      "build/electron.js",
       "src/**/*",
       "assets/**/*",
       "public/**/*",
@@ -36,14 +36,14 @@
       "package.json"
     ],
     "win": {
-      "icon": "assets/icon.ico",
+      "icon": "icon.ico",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "mac": {
-      "icon": "assets/icon.icns",
+      "icon": "icon.icns",
       "target": [
         "dmg",
         "zip"
@@ -51,7 +51,7 @@
     },
     "linux": {
       "category": "Utility",
-      "icon": "assets/icon.png",
+      "icon": "icon.png",
       "target": [
         "AppImage",
         "deb"
