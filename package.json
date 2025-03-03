@@ -31,10 +31,11 @@
       "output": "dist"
     },
     "files": [
-      "build/electron.js",
-      "src/**/*",
-      "assets/**/*",
-      "public/**/*",
+      "./build/**/*",
+      "./build/electron.js",
+      "./src/**/*",
+      "./assets/**/*",
+      "./public/**/*",
       
       "resources/**/*",
       "package.json"
