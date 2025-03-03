@@ -27,7 +27,7 @@ jobs:
       - name: Build Electron App
         run: npx electron-builder --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Upload Built Files
         uses: actions/upload-artifact@v4
