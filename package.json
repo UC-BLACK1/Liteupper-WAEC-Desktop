@@ -2,7 +2,7 @@
   "name": "liteupper-desktop",
   "version": "0.1.0",
   "private": true,
-  "main": "build/electron.js",
+  "main": "./build/electron.js",
   "author": {
     "name": "Liteupper",
     "email": "liteupper@gmail.com"
@@ -22,7 +22,7 @@
   },
   "build": {
     "extraMetadata": {
-      "main": "build/electron.js"
+      "main": "./build/electron.js"
     },
     "extends": null,
     "appId": "com.liteupper.desktop",
