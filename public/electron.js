@@ -1,20 +1,21 @@
 const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
+
 const os = process.platform;
-let iconPath = path.resolve(__dirname, 'icon.png'); // Default for Linux
+let iconPath = path.resolve(__dirname, 'assets', 'icon.png'); // Default for Linux
 
 if (os === 'win32') {
-  iconPath = path.resolve(__dirname, 'icon.ico'); // Windows
+  iconPath = path.resolve(__dirname, 'assets', 'icon.ico'); // Windows
 } else if (os === 'darwin') {
-  iconPath = path.resolve(__dirname, 'icon.icns'); // macOS
+  iconPath = path.resolve(__dirname, 'assets', 'icon.icns'); // macOS
 }
 
 let mainWindow;
 let splashScreen;
 
-app.on('ready', () => {
-  // ✅ Create the splash screen window
+app.whenReady().then(() => {
+  // ✅ Create splash screen
   splashScreen = new BrowserWindow({
     width: 400,
     height: 300,
@@ -25,9 +26,9 @@ app.on('ready', () => {
     icon: iconPath
   });
 
-  splashScreen.loadFile(path.join(app.getAppPath(), 'src/splash.html')); // ✅ Fix path
+  splashScreen.loadFile(path.join(app.getAppPath(), 'src/splash.html'));
 
-  // ✅ Create the main window but keep it hidden
+  // ✅ Create main window (hidden initially)
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -36,16 +37,16 @@ app.on('ready', () => {
     webPreferences: {
       contextIsolation: true,
       enableRemoteModule: false,
-      webSecurity: false, // ✅ Allows loading local files
+      webSecurity: false
     }
   });
 
-  mainWindow.loadFile(path.join(app.getAppPath(), 'src/Subjects.html')); // ✅ Fix path
+  mainWindow.loadFile(path.join(app.getAppPath(), 'src/Subjects.html'));
 
   // ✅ Check for updates
   autoUpdater.checkForUpdatesAndNotify();
 
-  // ✅ Show splash for at least 5 seconds, then show main window
+  // ✅ Show main window after splash screen
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => {
       splashScreen.close();
@@ -54,7 +55,7 @@ app.on('ready', () => {
   });
 });
 
-// ✅ Auto Update Events (Show Dialog Instead of Console Logs)
+// ✅ Auto Update Events
 autoUpdater.on("update-available", () => {
   dialog.showMessageBox({
     type: "info",
@@ -68,13 +69,26 @@ autoUpdater.on("update-downloaded", () => {
   dialog.showMessageBox({
     type: "info",
     title: "Update Ready",
-    message: "Update downloaded. The app will restart to install.",
-    buttons: ["Restart Now"]
-  }).then(() => {
-    autoUpdater.quitAndInstall();
+    message: "Update downloaded. Restart now to install the update.",
+    buttons: ["Restart Now", "Later"]
+  }).then((result) => {
+    if (result.response === 0) { // "Restart Now" clicked
+      autoUpdater.quitAndInstall();
+    }
   });
 });
 
+// ✅ Handle Update Errors
+autoUpdater.on("error", (error) => {
+  dialog.showMessageBox({
+    type: "error",
+    title: "Update Error",
+    message: `An error occurred while updating: ${error.message}`,
+    buttons: ["OK"]
+  });
+});
+
+// ✅ Quit app when all windows are closed
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
