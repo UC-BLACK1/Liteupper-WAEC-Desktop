@@ -55,10 +55,7 @@
       "target": [
         "dmg",
         "zip"
-      ],
-      "signingHashAlgorithms": ["sha256"],
-      "certificateSubjectName": "LITEUPPER LIMITED",
-      "sign": "electron-builder-esigner"
+      ]
     },
     "linux": {
       "category": "Utility",

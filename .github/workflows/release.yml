@@ -7,7 +7,10 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout Code
@@ -44,14 +47,14 @@ jobs:
       - name: Upload Signed Executable
         uses: actions/upload-artifact@v4
         with:
-          name: LiteUpper-Windows
-          path: dist/signed/LiteUpper.exe
+          name: LiteUpper-${{ matrix.os }}
+          path: dist/
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/signed/LiteUpper.exe
-          body: "🚀 New LiteUpper Release! Download the latest signed version below."
+          files: dist/**
+          body: "🚀 New LiteUpper Release! Download the latest version below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
