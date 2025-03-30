@@ -1,9 +1,9 @@
-name: Build and Sign LiteUpper Windows App
+name: Build LiteUpper Desktop 
 
 on:
   push:
     tags:
-      - "v*"  # Runs when a tag like v1.0.0 is pushed
+      - "v*"  
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
         run: npm install
 
       - name: Build Electron App
-        run: npx electron-builder --win --publish never
+        run: npx electron-builder --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
