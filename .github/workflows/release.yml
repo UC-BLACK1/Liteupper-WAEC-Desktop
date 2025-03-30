@@ -29,13 +29,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
+      # 🔥 **Only download and install SSL.com CodeSignTool on Windows**
       - name: Download and Install SSL.com CodeSignTool
+        if: runner.os == 'Windows'
         run: |
           curl -LO https://cdn.ssl.com/esigner/codesigner-windows.zip
-          tar -xf codesigner-windows.zip
+          powershell -Command "Expand-Archive -Path 'codesigner-windows.zip' -DestinationPath '.'"
           move CodeSignTool.exe C:\Windows\System32\
 
+      # 🔥 **Only sign Windows executables**
       - name: Sign Windows Executable
+        if: runner.os == 'Windows'
         run: |
           CodeSignTool.exe sign --username "${{ secrets.ES_USERNAME }}" --password "${{ secrets.ES_PASSWORD }}" --credential_id "${{ secrets.CREDENTIAL_ID }}" --totp_secret "${{ secrets.ES_TOTP_SECRET }}" --file_path "dist/LiteUpper.exe" --output_path "dist/signed/"
         env:
@@ -44,7 +48,7 @@ jobs:
           CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
           ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
 
-      - name: Upload Signed Executable
+      - name: Upload Built Files
         uses: actions/upload-artifact@v4
         with:
           name: LiteUpper-${{ matrix.os }}
