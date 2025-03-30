@@ -33,9 +33,41 @@ jobs:
       - name: Download and Install SSL.com CodeSignTool
         if: runner.os == 'Windows'
         run: |
-          curl -LO https://cdn.ssl.com/esigner/codesigner-windows.zip
-          powershell -Command "Expand-Archive -Path 'codesigner-windows.zip' -DestinationPath '.'"
-          move CodeSignTool.exe C:\Windows\System32\
+          $retryCount = 0
+          $maxRetries = 3
+          $downloadSuccess = $false
+          
+          while (-not $downloadSuccess -and $retryCount -lt $maxRetries) {
+              try {
+                  Invoke-WebRequest -Uri "https://cdn.ssl.com/esigner/codesigner-windows.zip" -OutFile "codesigner-windows.zip"
+                  
+                  # Verify ZIP file is valid
+                  $zip = [System.IO.Compression.ZipFile]::OpenRead("codesigner-windows.zip")
+                  if ($zip.Entries.Count -gt 0) {
+                      $zip.Dispose()
+                      $downloadSuccess = $true
+                  } else {
+                      throw "Invalid ZIP file"
+                  }
+              } catch {
+                  Write-Host "Download failed or ZIP file is corrupt. Retrying..."
+                  $retryCount++
+                  Start-Sleep -Seconds 5
+              }
+          }
+          
+          if (-not $downloadSuccess) {
+              Write-Host "Failed to download a valid ZIP file after $maxRetries attempts."
+              exit 1
+          }
+
+          # Extract ZIP
+          Expand-Archive -Path "codesigner-windows.zip" -DestinationPath "." -Force
+          
+          # Move to System32
+          Move-Item -Path ".\CodeSignTool.exe" -Destination "C:\Windows\System32\" -Force
+        shell: pwsh
+
 
       # 🔥 **Only sign Windows executables**
       - name: Sign Windows Executable
