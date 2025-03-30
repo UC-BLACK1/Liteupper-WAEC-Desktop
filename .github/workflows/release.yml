@@ -1,16 +1,13 @@
-name: Build LiteUpper Desktop
+name: Build and Sign LiteUpper Windows App
 
 on:
   push:
     tags:
-      - "v*"  # Runs when a tag like v0.1.0 is pushed
+      - "v*"  # Runs when a tag like v1.0.0 is pushed
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Code
@@ -25,23 +22,36 @@ jobs:
         run: npm install
 
       - name: Build Electron App
-        run: npx electron-builder --publish never
+        run: npx electron-builder --win --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      - name: Upload Built Files
+      - name: Download and Install SSL.com CodeSignTool
+        run: |
+          curl -LO https://cdn.ssl.com/esigner/codesigner-windows.zip
+          tar -xf codesigner-windows.zip
+          move CodeSignTool.exe C:\Windows\System32\
+
+      - name: Sign Windows Executable
+        run: |
+          CodeSignTool.exe sign --username "${{ secrets.ES_USERNAME }}" --password "${{ secrets.ES_PASSWORD }}" --credential_id "${{ secrets.CREDENTIAL_ID }}" --totp_secret "${{ secrets.ES_TOTP_SECRET }}" --file_path "dist/LiteUpper.exe" --output_path "dist/signed/"
+        env:
+          ES_USERNAME: ${{ secrets.ES_USERNAME }}
+          ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+          CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
+          ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+
+      - name: Upload Signed Executable
         uses: actions/upload-artifact@v4
         with:
-          name: LiteUpper-${{ matrix.os }}
-          path: dist/
+          name: LiteUpper-Windows
+          path: dist/signed/LiteUpper.exe
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/**
-          body: "🚀 New LiteUpper Release! Download the latest version below."
+          files: dist/signed/LiteUpper.exe
+          body: "🚀 New LiteUpper Release! Download the latest signed version below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-          
