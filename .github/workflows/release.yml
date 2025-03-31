@@ -47,7 +47,7 @@ jobs:
           while (-not $downloadSuccess -and $retryCount -lt $maxRetries) {
               try {
                   Write-Host "Attempt $($retryCount+1): Downloading CodeSignTool..."
-                  Invoke-WebRequest -Uri "https://cdn.ssl.com/esigner/codesigner-windows.zip" -OutFile $zipPath
+                  Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file?socket=true" -OutFile $zipPath
                   
                   # Verify ZIP file
                   if (!(Test-Path $zipPath)) {
