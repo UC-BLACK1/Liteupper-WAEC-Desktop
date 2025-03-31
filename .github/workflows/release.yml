@@ -29,94 +29,96 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      # 🔥 **Only download and install SSL.com CodeSignTool on Windows**
-      - name: Download and Install SSL.com CodeSignTool
+      # 🔥 **Ensure Java is installed on Linux/macOS**
+      - name: Install Java (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          sudo apt update && sudo apt install -y default-jre || brew install openjdk
+        shell: bash
+
+      # 🔥 **Download and Install SSL.com CodeSignTool (Windows)**
+      - name: Download and Install CodeSignTool for Windows
         if: runner.os == 'Windows'
         run: |
-          $retryCount = 0
-          $maxRetries = 3
-          $downloadSuccess = $false
           $zipPath = "codesigner-windows.zip"
           $extractPath = "codesigner"
-          $exePath = "$extractPath\CodeSignTool.exe"
 
-          # Remove previous downloads
-          if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
-          if (Test-Path $extractPath) { Remove-Item -Recurse -Force $extractPath }
+          # Remove old files
+          Remove-Item -Force -ErrorAction SilentlyContinue $zipPath
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $extractPath
 
-          while (-not $downloadSuccess -and $retryCount -lt $maxRetries) {
-              try {
-                  Write-Host "Attempt $($retryCount+1): Downloading CodeSignTool..."
-                  Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file?socket=true" -OutFile $zipPath
-                  
-                  # Verify ZIP file
-                  if (!(Test-Path $zipPath)) {
-                      throw "ZIP file not found after download."
-                  }
-                  
-                  # Validate ZIP integrity
-                  Add-Type -AssemblyName System.IO.Compression.FileSystem
-                  $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
-                  if ($zip.Entries.Count -gt 0) {
-                      $zip.Dispose()
-                      $downloadSuccess = $true
-                  } else {
-                      throw "Invalid ZIP file"
-                  }
-              } catch {
-                  Write-Host "❌ Download failed or ZIP file is corrupt. Retrying in 5 seconds..."
-                  $retryCount++
-                  Start-Sleep -Seconds 5
-              }
-          }
-
-          if (-not $downloadSuccess) {
-              Write-Host "❌ Failed to download a valid ZIP file after $maxRetries attempts."
-              exit 1
-          }
+          # Download CodeSignTool
+          Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file?socket=true" -OutFile $zipPath
 
           # Extract ZIP
           New-Item -ItemType Directory -Path $extractPath -Force
-          try {
-              Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-          } catch {
-              Write-Host "❌ Failed to extract CodeSignTool ZIP!"
+          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+
+          # Verify batch file exists
+          if (!(Test-Path "$extractPath\CodeSignTool.bat")) {
+              Write-Host "❌ CodeSignTool.bat not found!"
               exit 1
           }
 
-          # Verify EXE file exists
-          if (!(Test-Path $exePath)) {
-              Write-Host "❌ CodeSignTool.exe was not found after extraction!"
-              exit 1
-          }
-
-          # Move executable to System32
-          Move-Item -Path $exePath -Destination "C:\Windows\System32\" -Force
+          # Move to System32 for global access
+          Move-Item -Path "$extractPath\CodeSignTool.bat" -Destination "C:\Windows\System32\" -Force
         shell: pwsh
 
+      # 🔥 **Download and Install SSL.com CodeSignTool (Linux/macOS)**
+      - name: Download and Install CodeSignTool for Linux/macOS
+        if: runner.os != 'Windows'
+        run: |
+          curl -o codesigner-linux.zip "https://www.ssl.com/download/codesigntool-for-windows/"
+          unzip codesigner-linux.zip -d codesigner
+          chmod +x codesigner/CodeSignTool.sh
+          sudo mv codesigner/CodeSignTool.sh /usr/local/bin/codesigntool
+        shell: bash
 
-      # 🔥 **Only sign Windows executables**
+      # 🔥 **Sign Windows Executable**
       - name: Sign Windows Executable
         if: runner.os == 'Windows'
         run: |
-          CodeSignTool.exe sign --username "${{ secrets.ES_USERNAME }}" --password "${{ secrets.ES_PASSWORD }}" --credential_id "${{ secrets.CREDENTIAL_ID }}" --totp_secret "${{ secrets.ES_TOTP_SECRET }}" --file_path "dist/LiteUpper.exe" --output_path "dist/signed/"
+          CodeSignTool.bat sign ^
+            --username "${{ secrets.ES_USERNAME }}" ^
+            --password "${{ secrets.ES_PASSWORD }}" ^
+            --credential_id "${{ secrets.CREDENTIAL_ID }}" ^
+            --totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
+            --file_path "dist/LiteUpper.exe" ^
+            --output_path "dist/signed/" ^
+            --format "PEM" ^
+            --timestamp "http://timestamp.sectigo.com"
         env:
           ES_USERNAME: ${{ secrets.ES_USERNAME }}
           ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
           CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
           ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
 
+      # 🔥 **Sign Linux/macOS Executable**
+      - name: Sign Linux/macOS Executable
+        if: runner.os != 'Windows'
+        run: |
+          codesigntool sign \
+            --username "${{ secrets.ES_USERNAME }}" \
+            --password "${{ secrets.ES_PASSWORD }}" \
+            --credential_id "${{ secrets.CREDENTIAL_ID }}" \
+            --totp_secret "${{ secrets.ES_TOTP_SECRET }}" \
+            --file_path "dist/LiteUpper" \
+            --output_path "dist/signed/" \
+            --format "PEM" \
+            --timestamp "http://timestamp.sectigo.com"
+        shell: bash
+
       - name: Upload Built Files
         uses: actions/upload-artifact@v4
         with:
           name: LiteUpper-${{ matrix.os }}
-          path: dist/
+          path: dist/signed/
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/**
+          files: dist/signed/**
           body: "🚀 New LiteUpper Release! Download the latest version below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
