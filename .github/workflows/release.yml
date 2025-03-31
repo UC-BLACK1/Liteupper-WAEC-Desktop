@@ -78,7 +78,7 @@ jobs:
       - name: Sign Windows Executable
         if: runner.os == 'Windows'
         run: |
-          CodeSignTool.bat sign ^
+          "C:\Windows\System32\cmd.exe" /c CodeSignTool.bat sign ^
             --username "${{ secrets.ES_USERNAME }}" ^
             --password "${{ secrets.ES_PASSWORD }}" ^
             --credential_id "${{ secrets.CREDENTIAL_ID }}" ^
@@ -87,6 +87,7 @@ jobs:
             --output_path "dist/signed/" ^
             --format "PEM" ^
             --timestamp "http://timestamp.sectigo.com"
+        shell: cmd
         env:
           ES_USERNAME: ${{ secrets.ES_USERNAME }}
           ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
