@@ -84,6 +84,12 @@ jobs:
           echo "Checking if dist/signed directory exists..."
           if exist "..\dist\signed" (echo "Directory exists") else (echo "Creating directory" & mkdir "..\dist\signed")
           dir ..\dist\signed
+        shell: cmd 
+        
+      - name: Verify CodeSignTool Execution
+        run: |
+          cd codesigner
+          cmd.exe /c CodeSignTool.bat --help
         shell: cmd  
 
       # ✅ Sign Windows Executable
@@ -92,6 +98,7 @@ jobs:
         run: |
           cd codesigner
           if not exist "..\dist\signed" mkdir "..\dist\signed"
+          echo "Running signing command..."
           cmd.exe /c CodeSignTool.bat sign ^
             -username "${{ secrets.ES_USERNAME }}" ^
             -password "${{ secrets.ES_PASSWORD }}" ^
@@ -99,8 +106,15 @@ jobs:
             -totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
             -input_file_path "..\dist\LiteUpper.exe" ^
             -output_dir_path "..\dist\signed" ^
-            -timestamp_url "http://ts.ssl.com"
+            -timestamp_url "http://ts.ssl.com" > signing_log.txt 2>&1
+          echo "Signing output:"
+          type signing_log.txt
         shell: cmd
+
+      - name: Verify Signed Executable
+        run: |
+          signtool verify /pa "..\dist\signed\LiteUpper.exe"
+        shell: cmd  
       
       # ✅ Debug Signed File Output (Windows)
       - name: Debug Signed File Output
