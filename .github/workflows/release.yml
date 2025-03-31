@@ -87,7 +87,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd codesigner
-          mkdir -p ../dist/signed
+          mkdir -p ../dist/signed/
           cmd.exe /c CodeSignTool.bat sign ^
             -username "${{ secrets.ES_USERNAME }}" ^
             -password "${{ secrets.ES_PASSWORD }}" ^
