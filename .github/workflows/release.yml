@@ -105,6 +105,12 @@ jobs:
           ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
           CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
           ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      
+      - name: Delete Old Artifacts
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: LiteUpper-${{ matrix.os }}
+          failOnError: false
 
       - name: Upload Built Files
         uses: actions/upload-artifact@v4
