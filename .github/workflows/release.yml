@@ -79,19 +79,26 @@ jobs:
         run: echo "Credentials loaded successfully"
         shell: bash  
 
+      - name: Debug Directory Paths
+        run: |
+          echo "Checking if dist/signed directory exists..."
+          if exist "..\dist\signed" (echo "Directory exists") else (echo "Creating directory" & mkdir "..\dist\signed")
+          dir ..\dist\signed
+        shell: cmd  
+
       # ✅ Sign Windows Executable
       - name: Sign Windows Executable
         if: runner.os == 'Windows'
         run: |
           cd codesigner
-          mkdir ..\dist\signed 2>nul
+          if not exist "..\dist\signed" mkdir "..\dist\signed"
           cmd.exe /c CodeSignTool.bat sign ^
             -username "${{ secrets.ES_USERNAME }}" ^
             -password "${{ secrets.ES_PASSWORD }}" ^
             -credential_id "${{ secrets.CREDENTIAL_ID }}" ^
             -totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
             -input_file_path "..\dist\LiteUpper.exe" ^
-            -output_dir_path "..\dist\signed\" ^
+            -output_dir_path "..\dist\signed" ^
             -timestamp_url "http://ts.ssl.com"
         shell: cmd
       
