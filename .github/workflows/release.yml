@@ -1,9 +1,9 @@
-name: Build LiteUpper Desktop 
+name: Build LiteUpper Desktop
 
 on:
   push:
     tags:
-      - "v*"  
+      - "v*"
 
 jobs:
   build:
@@ -29,153 +29,63 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      # ✅ Install Java for Linux/macOS (Required for signing)
+      # ✅ Install Java (Required for eSigner CKA on Linux/macOS)
       - name: Install Java (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           sudo apt update && sudo apt install -y default-jre || brew install openjdk
         shell: bash
 
-      # ✅ Ensure signtool is available for Windows
-      - name: Install Windows SDK (for signtool)
+      # ✅ Install eSigner CKA for Windows
+      - name: Install eSigner CKA (Windows)
         if: runner.os == 'Windows'
         run: |
-          echo "Downloading Windows SDK Installer..."
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2083338" -OutFile "winsdksetup.exe"
-          
-          echo "Installing Windows SDK..."
-          Start-Process -FilePath "winsdksetup.exe" -ArgumentList "/quiet /norestart" -Wait
-          
-          echo "Checking if signtool.exe exists..."
-          $signtoolPath = "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe"
-          if (!(Test-Path $signtoolPath)) {
-            Write-Host "❌ signtool.exe not found!"
-            exit 1
-          }
-
-          echo "Adding signtool.exe to PATH..."
-          echo "C:\Program Files (x86)\Windows Kits\10\bin\x64" >> $GITHUB_PATH
+          Invoke-WebRequest -Uri "https://app.esigner.com/documents/99645bc5-aa9e-4ca9-93af-992c5820a1da/final?socket=true" -OutFile "esigner-cka.exe"
+          Start-Process -FilePath "esigner-cka.exe" -ArgumentList "/silent" -Wait
         shell: pwsh
 
-
-      # ✅ Download and Install SSL.com CodeSignTool for Windows
-      - name: Download and Install CodeSignTool for Windows
-        if: runner.os == 'Windows'
-        run: |
-          $zipPath = "codesigner-windows.zip"
-          $extractPath = "codesigner"
-
-          # Remove old files
-          Remove-Item -Force -ErrorAction SilentlyContinue $zipPath
-          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $extractPath
-
-          # ✅ Download CodeSignTool
-          Invoke-WebRequest -Uri "https://www.ssl.com/download/codesigntool-for-windows/" -OutFile $zipPath
-
-          # ✅ Extract ZIP
-          New-Item -ItemType Directory -Path $extractPath -Force
-          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-
-          # ✅ Verify batch file exists
-          if (!(Test-Path "$extractPath\CodeSignTool.bat")) {
-              Write-Host "❌ CodeSignTool.bat not found!"
-              exit 1
-          }
-
-          # ✅ Move to System32 for global access
-          Move-Item -Path "$extractPath\CodeSignTool.bat" -Destination "C:\Windows\System32\" -Force
-        shell: pwsh
-
-      # ✅ Download and Install SSL.com CodeSignTool for Linux/macOS
-      - name: Download and Install CodeSignTool for Linux/macOS
+      # ✅ Install eSigner CKA for Linux/macOS
+      - name: Install eSigner CKA (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          curl -o codesigner-linux.zip "https://www.ssl.com/download/codesigntool-for-linux-and-macos/"
-          unzip codesigner-linux.zip -d codesigner
-          chmod +x codesigner/CodeSignTool.sh
-          sudo mv codesigner/CodeSignTool.sh /usr/local/bin/codesigntool
+          curl -o esigner-cka.tar.gz "https://www.ssl.com/download/esigner-cka-for-linux-and-macos/"
+          tar -xzf esigner-cka.tar.gz
+          chmod +x esigner-cka/cka
+          sudo mv esigner-cka/cka /usr/local/bin/
         shell: bash
 
-      # ✅ Debug Secrets (Safe Output)
-      - name: Debug Secrets (Safe Output)
-        run: echo "Credentials loaded successfully"
-        shell: bash  
+      # ✅ Verify eSigner CKA Installation
+      - name: Verify eSigner CKA
+        run: cka --version
+        shell: bash
 
-      - name: Debug Directory Paths
-        run: |
-          echo "Checking if dist/signed directory exists..."
-          if not exist "..\dist\signed" mkdir "..\dist\signed"
-          dir ..\dist\signed
-        shell: cmd 
-
-      # ✅ Verify CodeSignTool Execution (Windows)
-      - name: Verify CodeSignTool Execution
-        if: runner.os == 'Windows'
-        run: |
-          cd codesigner
-          cmd.exe /c CodeSignTool.bat --help
-        shell: cmd  
-
-      # ✅ Sign Windows Executable
+      # ✅ Sign Windows Executable with eSigner CKA
       - name: Sign Windows Executable
         if: runner.os == 'Windows'
         run: |
-          cd codesigner
-          if not exist "..\dist\signed" mkdir "..\dist\signed"
-          echo "Running signing command..."
-          cmd.exe /c CodeSignTool.bat sign ^
-            -username "${{ secrets.ES_USERNAME }}" ^
-            -password "${{ secrets.ES_PASSWORD }}" ^
-            -credential_id "${{ secrets.CREDENTIAL_ID }}" ^
-            -totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
-            -input_file_path "..\dist\LiteUpper.exe" ^
-            -output_dir_path "..\dist\signed" > signing_log.txt 2>&1
-          echo "Signing output:"
-          type signing_log.txt
-        shell: cmd
+          cka sign \
+            --username "${{ secrets.ES_USERNAME }}" \
+            --password "${{ secrets.ES_PASSWORD }}" \
+            --credential-id "${{ secrets.CREDENTIAL_ID }}" \
+            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
+            --input "dist/LiteUpper.exe" \
+            --output "dist/signed/LiteUpper.exe"
+        shell: pwsh
 
-      # ✅ Verify signtool.exe availability
-      - name: Verify signtool.exe Path
-        if: runner.os == 'Windows'
-        run: |
-          where signtool
-        shell: cmd
-
-      - name: Verify Signed Executable
-        if: runner.os == 'Windows'
-        run: |
-          signtool verify /pa "..\dist\signed\LiteUpper.exe"
-        shell: cmd  
-
-      # ✅ Debug Signed File Output (Windows)
-      - name: Debug Signed File Output
-        if: runner.os == 'Windows'
-        run: |
-          echo "Checking signed files..."
-          dir dist\signed\
-        shell: cmd
-        env:
-          ES_USERNAME: ${{ secrets.ES_USERNAME }}
-          ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-          CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
-          ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-
-      # ✅ Sign Linux/macOS Executable
+      # ✅ Sign Linux/macOS Executable with eSigner CKA
       - name: Sign Linux/macOS Executable
         if: runner.os != 'Windows'
         run: |
-          codesigntool sign \
+          cka sign \
             --username "${{ secrets.ES_USERNAME }}" \
             --password "${{ secrets.ES_PASSWORD }}" \
-            --credential_id "${{ secrets.CREDENTIAL_ID }}" \
-            --totp_secret "${{ secrets.ES_TOTP_SECRET }}" \
-            --file_path "dist/LiteUpper" \
-            --output_path "dist/signed/" \
-            --format "PEM" \
-            --timestamp "http://timestamp.sectigo.com"
+            --credential-id "${{ secrets.CREDENTIAL_ID }}" \
+            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
+            --input "dist/LiteUpper" \
+            --output "dist/signed/LiteUpper"
         shell: bash
 
-      # ✅ Upload Built and Signed Files
+      # ✅ Upload Signed Files
       - name: Upload Signed Files
         uses: actions/upload-artifact@v4
         with:
