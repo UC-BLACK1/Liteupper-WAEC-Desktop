@@ -48,7 +48,7 @@
         "portable"
       ],
       "signingHashAlgorithms": ["sha256"],
-      "sign": true
+      "sign": false
     },
     "mac": {
       "icon": "assets/icon.icns",
