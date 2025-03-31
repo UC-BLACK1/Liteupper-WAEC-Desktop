@@ -29,14 +29,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      # 🔥 **Ensure Java is installed on Linux/macOS**
+      # ✅ Install Java for Linux/macOS (Required for signing)
       - name: Install Java (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           sudo apt update && sudo apt install -y default-jre || brew install openjdk
         shell: bash
 
-      # 🔥 **Download and Install SSL.com CodeSignTool (Windows)**
+      # ✅ Download and Install SSL.com CodeSignTool for Windows
       - name: Download and Install CodeSignTool for Windows
         if: runner.os == 'Windows'
         run: |
@@ -47,71 +47,68 @@ jobs:
           Remove-Item -Force -ErrorAction SilentlyContinue $zipPath
           Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $extractPath
 
-          # Download CodeSignTool
+          # ✅ Download CodeSignTool
           Invoke-WebRequest -Uri "https://www.ssl.com/download/codesigntool-for-windows/" -OutFile $zipPath
 
-          # Extract ZIP
+          # ✅ Extract ZIP
           New-Item -ItemType Directory -Path $extractPath -Force
           Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
 
-          # Verify batch file exists
+          # ✅ Verify batch file exists
           if (!(Test-Path "$extractPath\CodeSignTool.bat")) {
               Write-Host "❌ CodeSignTool.bat not found!"
               exit 1
           }
 
-          # Move to System32 for global access
+          # ✅ Move to System32 for global access
           Move-Item -Path "$extractPath\CodeSignTool.bat" -Destination "C:\Windows\System32\" -Force
         shell: pwsh
 
-      # 🔥 **Download and Install SSL.com CodeSignTool (Linux/macOS)**
+      # ✅ Download and Install SSL.com CodeSignTool for Linux/macOS
       - name: Download and Install CodeSignTool for Linux/macOS
         if: runner.os != 'Windows'
         run: |
-          curl -o codesigner-linux.zip "https://www.ssl.com/download/codesigntool-for-windows/"
+          curl -o codesigner-linux.zip "https://www.ssl.com/download/codesigntool-for-linux-and-macos/"
           unzip codesigner-linux.zip -d codesigner
           chmod +x codesigner/CodeSignTool.sh
           sudo mv codesigner/CodeSignTool.sh /usr/local/bin/codesigntool
         shell: bash
 
-      - name: Debug Secrets
-        run: |
-          echo "USERNAME: ${{ secrets.ES_USERNAME }}"
-          echo "PASSWORD: ${{ secrets.ES_PASSWORD }}"
-          echo "CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}"
-          echo "TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}"
+      # ✅ Debug Secrets
+      - name: Debug Secrets (Safe Output)
+        run: echo "Credentials loaded successfully"
         shell: bash  
 
-      # 🔥 **Sign Windows Executable**
+      # ✅ Sign Windows Executable
       - name: Sign Windows Executable
         if: runner.os == 'Windows'
         run: |
           cd codesigner
-          mkdir -p ../dist/signed/
+          mkdir ..\dist\signed 2>nul
           cmd.exe /c CodeSignTool.bat sign ^
             -username "${{ secrets.ES_USERNAME }}" ^
             -password "${{ secrets.ES_PASSWORD }}" ^
             -credential_id "${{ secrets.CREDENTIAL_ID }}" ^
             -totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
-            -input_file_path "../dist/LiteUpper.exe" ^
-            -output_dir_path "../dist/signed/"
+            -input_file_path "..\dist\LiteUpper.exe" ^
+            -output_dir_path "..\dist\signed\" ^
+            -timestamp_url "http://ts.ssl.com"
         shell: cmd
       
+      # ✅ Debug Signed File Output (Windows)
       - name: Debug Signed File Output
         if: runner.os == 'Windows'
         run: |
           echo "Checking signed files..."
           dir dist\signed\
         shell: cmd
-    
-
         env:
           ES_USERNAME: ${{ secrets.ES_USERNAME }}
           ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
           CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
           ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
 
-      # 🔥 **Sign Linux/macOS Executable**
+      # ✅ Sign Linux/macOS Executable
       - name: Sign Linux/macOS Executable
         if: runner.os != 'Windows'
         run: |
@@ -126,12 +123,14 @@ jobs:
             --timestamp "http://timestamp.sectigo.com"
         shell: bash
 
-      - name: Upload Built Files
+      # ✅ Upload Built and Signed Files
+      - name: Upload Signed Files
         uses: actions/upload-artifact@v4
         with:
           name: LiteUpper-${{ matrix.os }}
           path: dist/signed/
 
+      # ✅ Publish to GitHub Releases
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
