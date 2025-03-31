@@ -46,9 +46,7 @@
       "target": [
         "nsis",
         "portable"
-      ],
-      "signingHashAlgorithms": ["sha256"],
-      "sign": false
+      ]
     },
     "mac": {
       "icon": "assets/icon.icns",

@@ -24,80 +24,28 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Import GPG key
+        run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }} 
+
       - name: Build Electron App
         run: npx electron-builder --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      # ✅ Install Java (Required for eSigner CKA on Linux/macOS)
-      - name: Install Java (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          sudo apt update && sudo apt install -y default-jre || brew install openjdk
-        shell: bash
-
-      # ✅ Install eSigner CKA for Windows
-      - name: Install eSigner CKA (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          Invoke-WebRequest -Uri "https://app.esigner.com/documents/99645bc5-aa9e-4ca9-93af-992c5820a1da/final?socket=true" -OutFile "esigner-cka.exe"
-          Start-Process -FilePath "esigner-cka.exe" -ArgumentList "/silent" -Wait
-        shell: pwsh
-
-      # ✅ Install eSigner CKA for Linux/macOS
-      - name: Install eSigner CKA (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          curl -o esigner-cka.tar.gz "https://www.ssl.com/download/esigner-cka-for-linux-and-macos/"
-          tar -xzf esigner-cka.tar.gz
-          chmod +x esigner-cka/cka
-          sudo mv esigner-cka/cka /usr/local/bin/
-        shell: bash
-
-      # ✅ Verify eSigner CKA Installation
-      - name: Verify eSigner CKA
-        run: cka --version
-        shell: bash
-
-      # ✅ Sign Windows Executable with eSigner CKA
-      - name: Sign Windows Executable
-        if: runner.os == 'Windows'
-        run: |
-          cka sign \
-            --username "${{ secrets.ES_USERNAME }}" \
-            --password "${{ secrets.ES_PASSWORD }}" \
-            --credential-id "${{ secrets.CREDENTIAL_ID }}" \
-            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
-            --input "dist/LiteUpper.exe" \
-            --output "dist/signed/LiteUpper.exe"
-        shell: pwsh
-
-      # ✅ Sign Linux/macOS Executable with eSigner CKA
-      - name: Sign Linux/macOS Executable
-        if: runner.os != 'Windows'
-        run: |
-          cka sign \
-            --username "${{ secrets.ES_USERNAME }}" \
-            --password "${{ secrets.ES_PASSWORD }}" \
-            --credential-id "${{ secrets.CREDENTIAL_ID }}" \
-            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
-            --input "dist/LiteUpper" \
-            --output "dist/signed/LiteUpper"
-        shell: bash
-
-      # ✅ Upload Signed Files
-      - name: Upload Signed Files
+      - name: Upload Built Files
         uses: actions/upload-artifact@v4
         with:
           name: LiteUpper-${{ matrix.os }}
-          path: dist/signed/
+          path: dist/
 
-      # ✅ Publish to GitHub Releases
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/signed/**
+          files: dist/**
           body: "🚀 New LiteUpper Release! Download the latest version below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
