@@ -40,11 +40,23 @@ jobs:
       - name: Install Windows SDK (for signtool)
         if: runner.os == 'Windows'
         run: |
-          echo "Checking for Windows SDK..."
-          choco install windows-sdk -y
-          echo "Adding signtool to PATH..."
+          echo "Downloading Windows SDK Installer..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2083338" -OutFile "winsdksetup.exe"
+          
+          echo "Installing Windows SDK..."
+          Start-Process -FilePath "winsdksetup.exe" -ArgumentList "/quiet /norestart" -Wait
+          
+          echo "Checking if signtool.exe exists..."
+          $signtoolPath = "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe"
+          if (!(Test-Path $signtoolPath)) {
+            Write-Host "❌ signtool.exe not found!"
+            exit 1
+          }
+
+          echo "Adding signtool.exe to PATH..."
           echo "C:\Program Files (x86)\Windows Kits\10\bin\x64" >> $GITHUB_PATH
-        shell: bash
+        shell: pwsh
+
 
       # ✅ Download and Install SSL.com CodeSignTool for Windows
       - name: Download and Install CodeSignTool for Windows
