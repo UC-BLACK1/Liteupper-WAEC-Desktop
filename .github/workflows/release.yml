@@ -36,6 +36,16 @@ jobs:
           sudo apt update && sudo apt install -y default-jre || brew install openjdk
         shell: bash
 
+      # ✅ Ensure signtool is available for Windows
+      - name: Install Windows SDK (for signtool)
+        if: runner.os == 'Windows'
+        run: |
+          echo "Checking for Windows SDK..."
+          choco install windows-sdk -y
+          echo "Adding signtool to PATH..."
+          echo "C:\Program Files (x86)\Windows Kits\10\bin\x64" >> $GITHUB_PATH
+        shell: bash
+
       # ✅ Download and Install SSL.com CodeSignTool for Windows
       - name: Download and Install CodeSignTool for Windows
         if: runner.os == 'Windows'
@@ -74,7 +84,7 @@ jobs:
           sudo mv codesigner/CodeSignTool.sh /usr/local/bin/codesigntool
         shell: bash
 
-      # ✅ Debug Secrets
+      # ✅ Debug Secrets (Safe Output)
       - name: Debug Secrets (Safe Output)
         run: echo "Credentials loaded successfully"
         shell: bash  
@@ -82,11 +92,13 @@ jobs:
       - name: Debug Directory Paths
         run: |
           echo "Checking if dist/signed directory exists..."
-          if exist "..\dist\signed" (echo "Directory exists") else (echo "Creating directory" & mkdir "..\dist\signed")
+          if not exist "..\dist\signed" mkdir "..\dist\signed"
           dir ..\dist\signed
         shell: cmd 
-        
+
+      # ✅ Verify CodeSignTool Execution (Windows)
       - name: Verify CodeSignTool Execution
+        if: runner.os == 'Windows'
         run: |
           cd codesigner
           cmd.exe /c CodeSignTool.bat --help
@@ -105,17 +117,24 @@ jobs:
             -credential_id "${{ secrets.CREDENTIAL_ID }}" ^
             -totp_secret "${{ secrets.ES_TOTP_SECRET }}" ^
             -input_file_path "..\dist\LiteUpper.exe" ^
-            -output_dir_path "..\dist\signed" ^
-            -timestamp_url "http://ts.ssl.com" > signing_log.txt 2>&1
+            -output_dir_path "..\dist\signed" > signing_log.txt 2>&1
           echo "Signing output:"
           type signing_log.txt
         shell: cmd
 
+      # ✅ Verify signtool.exe availability
+      - name: Verify signtool.exe Path
+        if: runner.os == 'Windows'
+        run: |
+          where signtool
+        shell: cmd
+
       - name: Verify Signed Executable
+        if: runner.os == 'Windows'
         run: |
           signtool verify /pa "..\dist\signed\LiteUpper.exe"
         shell: cmd  
-      
+
       # ✅ Debug Signed File Output (Windows)
       - name: Debug Signed File Output
         if: runner.os == 'Windows'
