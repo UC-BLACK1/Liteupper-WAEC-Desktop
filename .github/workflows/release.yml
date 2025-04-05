@@ -66,7 +66,7 @@ jobs:
           Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file" -OutFile codesigner.zip
           Expand-Archive -Path codesigner.zip -DestinationPath codesigner
 
-          
+
       - name: Sign All EXEs
         shell: pwsh
         run: |
@@ -76,7 +76,7 @@ jobs:
             Write-Host "❌ CodeSignTool.bat NOT FOUND"
             exit 1
           }
-      
+
           $toolPath = Resolve-Path .\codesigner\CodeSignTool.bat
           Write-Host "Tool Path: $($toolPath.Path)"
           
@@ -89,13 +89,13 @@ jobs:
             Write-Host "Signing: $exe"
             
             # Create the full command string with proper escaping
-            $cmd = """$($toolPath.Path)"" sign --username `"$env:ES_USERNAME`" --password `"$env:ES_PASSWORD`" --credential_id `"$env:CREDENTIAL_ID`" --otp `"$env:ES_TOTP_SECRET`" --input `"$exe`" --output `"$exe`""
+            $cmd = "$($toolPath.Path) sign --username `"$env:ES_USERNAME`" --password `"$env:ES_PASSWORD`" --credential_id `"$env:CREDENTIAL_ID`" --otp `"$env:ES_TOTP_SECRET`" --input `"$exe`" --output `"$exe`""
             Write-Host "Running command: cmd.exe /c $cmd"
             
             # Execute the command with proper redirection of standard output and error
             $process = Start-Process cmd.exe -ArgumentList "/c $cmd" -PassThru -Wait -RedirectStandardOutput "stdout.txt" -RedirectStandardError "stderr.txt"
             $process.WaitForExit()
-      
+
             # Check for any errors in the process exit code
             if ($process.ExitCode -ne 0) {
                 Write-Host "Error during signing process. Exit Code: $($process.ExitCode)"
@@ -109,6 +109,7 @@ jobs:
           ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
           CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
           ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+
       
         
         
