@@ -6,18 +6,20 @@ on:
       - "v*"
 
 jobs:
-  get-version:
+  get-versions:
+    # if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
+      package_version: ${{ steps.set_versions.outputs.package_version }}
     steps:
-      - uses: actions/checkout@v4
-
-      - id: get_version
-        run: echo "version=$(node -p \"require('./package.json').version\")"
+      - uses: actions/checkout@v3
+      - name: Get the version
+        id: set_versions
+        run: |
+          echo "::set-output name=package_version::$(node -p "require('./package.json').version")"
 
   build-linux-macos:
-    needs: get-version
+    needs: get-versions
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -62,7 +64,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
   build-windows:
-    needs: get-version
+    needs: get-versions
     runs-on: windows-latest
 
     steps:
@@ -91,7 +93,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-version.outputs.version }}.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-versions.outputs.version }}.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
