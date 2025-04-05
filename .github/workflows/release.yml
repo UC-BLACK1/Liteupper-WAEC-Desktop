@@ -53,7 +53,7 @@ jobs:
 
       - name: Download and Extract CodeSignTool
         run: |
-          Invoke-WebRequest -Uri "https://www.ssl.com/download/codesigner" -OutFile codesigner.zip -UseBasicParsing
+          Invoke-WebRequest -Uri "https://app.esigner.com/files/CodeSignTool-v1-3-2-windows/3954004a/download" -OutFile codesigner.zip
           Expand-Archive -Path codesigner.zip -DestinationPath codesigner
 
       - name: Find EXE to Sign
@@ -64,7 +64,7 @@ jobs:
 
       - name: Sign Executable
         run: |
-          .\codesigner\CodeSignTool.exe sign `
+          .\codesigner\CodeSignTool.bat sign `
             --username "${{ secrets.ES_USERNAME }}" `
             --password "${{ secrets.ES_PASSWORD }}" `
             --credential_id "${{ secrets.CREDENTIAL_ID }}" `
@@ -79,4 +79,3 @@ jobs:
           files: ${{ env.EXE_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
