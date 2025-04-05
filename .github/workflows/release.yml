@@ -53,7 +53,7 @@ jobs:
 
       - name: Download and Extract CodeSignTool
         run: |
-          Invoke-WebRequest -Uri "https://cdn.ssl.com/code-signing/CodeSignTool-win64.zip" -OutFile codesigner.zip
+          Invoke-WebRequest -Uri "https://www.ssl.com/download/codesigner" -OutFile codesigner.zip -UseBasicParsing
           Expand-Archive -Path codesigner.zip -DestinationPath codesigner
 
       - name: Find EXE to Sign
