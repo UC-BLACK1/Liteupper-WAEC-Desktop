@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout Code
@@ -34,14 +34,8 @@ jobs:
         with:
           node-version: 18
 
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install Dependencies
-        run: npm install --verbose
+        run: npm install
 
       - name: Import GPG key
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
@@ -78,19 +72,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Checkout esigner-codesign repository
+        uses: actions/checkout@v3
+        with:
+          repository: 'SSLcom/esigner-codesign'
+          path: esigner-codesign
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install Dependencies
-        run: npm install --verbose
+        run: npm install
 
       - name: Build and Sign App (Windows)
         run: |
@@ -100,7 +94,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-versions.outputs.version }}.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-versions.outputs.package_version }}.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
