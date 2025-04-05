@@ -54,7 +54,7 @@ jobs:
           name: LiteUpper-${{ matrix.os }}
           path: dist/
 
-      - name: Publish to GitHub Releases (Linux/macOS)
+      - name: Publish to GitHub Releases (Linux)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
