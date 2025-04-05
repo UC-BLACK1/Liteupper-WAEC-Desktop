@@ -89,7 +89,7 @@ jobs:
         timeout-minutes: 5
         
       - name: Install Electron Build Dependencies
-        run: npx electron-builder install-app-deps
+        run: npx electron-builder install-app-deps --arch=x64 --platform=win32
         timeout-minutes: 5
         
 
