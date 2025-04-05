@@ -7,15 +7,16 @@ on:
 
 jobs:
   get-versions:
+    # if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       package_version: ${{ steps.set_versions.outputs.package_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Get the version
         id: set_versions
         run: |
-          echo "package_version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+          echo "::set-output name=package_version::$(node -p "require('./package.json').version")"
 
   build-linux-macos:
     needs: get-versions
@@ -32,14 +33,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
 
       - name: Install Dependencies
         run: npm install
