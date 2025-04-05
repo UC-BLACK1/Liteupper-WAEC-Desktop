@@ -11,11 +11,12 @@ jobs:
     outputs:
       package_version: ${{ steps.set_versions.outputs.package_version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get the version
         id: set_versions
         run: |
-          echo "::set-output name=package_version::$(node -p "require('./package.json').version")"
+          echo "package_version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+        # This will ensure the version is available to the next jobs via the GITHUB_ENV variable
 
   build-linux-macos:
     needs: get-versions
