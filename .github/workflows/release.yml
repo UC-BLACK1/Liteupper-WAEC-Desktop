@@ -1,4 +1,4 @@
-name: Build LiteUpper Desktop
+name: Build and Sign LiteUpper Desktop
 
 on:
   push:
@@ -25,9 +25,10 @@ jobs:
         run: npm install
 
       - name: Import GPG key
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }} 
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Build Electron App
         run: npx electron-builder --publish never
@@ -40,12 +41,41 @@ jobs:
           name: LiteUpper-${{ matrix.os }}
           path: dist/
 
-      - name: Publish to GitHub Releases
+  sign-windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: LiteUpper-windows-latest
+          path: dist/
+
+      - name: Install CodeSignTool
+        run: |
+          Invoke-WebRequest -Uri https://app.esigner.com/documents/99645bc5-aa9e-4ca9-93af-992c5820a1da/final -OutFile codesigner.zip
+          Expand-Archive codesigner.zip -DestinationPath codesigner
+
+      - name: Find EXE to Sign
+        id: find_exe
+        run: |
+          $exePath = Get-ChildItem -Path dist -Filter *.exe -Recurse | Select-Object -ExpandProperty FullName
+          echo "EXE_PATH=$exePath" >> $env:GITHUB_ENV
+
+      - name: Sign Executable
+        run: |
+          codesigner\CodeSignTool.exe sign `
+            --username "${{ secrets.ES_USERNAME }}" `
+            --password "${{ secrets.ES_PASSWORD }}" `
+            --credential_id "${{ secrets.CREDENTIAL_ID }}" `
+            --otp "${{ secrets.ES_TOTP_SECRET }}" `
+            --input "$env:EXE_PATH" `
+            --output "$env:EXE_PATH"
+
+      - name: Publish Signed EXE to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: dist/**
-          body: "🚀 New LiteUpper Release! Download the latest version below."
+          files: ${{ env.EXE_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
