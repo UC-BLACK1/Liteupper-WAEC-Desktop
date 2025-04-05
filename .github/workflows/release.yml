@@ -52,13 +52,12 @@ jobs:
           name: LiteUpper-${{ matrix.os }}
           path: dist/
 
-      - name: Publish to GitHub Releases
-        if: matrix.os == 'ubuntu-latest'
+      - name: Publish to GitHub Releases (Linux/macOS)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: dist/**
-          body: "🚀 New LiteUpper Release! Download the latest version below."
+          body: "🚀 New LiteUpper Release for ${{ matrix.os }}! Download below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
@@ -108,3 +107,12 @@ jobs:
         with:
           name: LiteUpper-windows
           path: dist/
+
+      - name: Publish to GitHub Releases (Windows)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/**
+          body: "🚀 New LiteUpper Release for Windows! Download below."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
