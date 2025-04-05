@@ -16,8 +16,7 @@ jobs:
         id: set_versions
         run: |
           echo "package_version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-        # This will ensure the version is available to the next jobs via the GITHUB_ENV variable
-
+          
   build-linux-macos:
     needs: get-versions
     runs-on: ${{ matrix.os }}
@@ -33,6 +32,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install Dependencies
         run: npm install
@@ -83,6 +90,14 @@ jobs:
         with:
           node-version: 18
 
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install Dependencies
         run: npm install
 
@@ -94,7 +109,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-versions.outputs.package_version }}.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ env.package_version }}.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
