@@ -16,7 +16,7 @@ jobs:
         id: set_versions
         run: |
           echo "package_version=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-          
+
   build-linux-macos:
     needs: get-versions
     runs-on: ${{ matrix.os }}
@@ -34,7 +34,7 @@ jobs:
           node-version: 18
 
       - name: Cache node_modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -91,7 +91,7 @@ jobs:
           node-version: 18
 
       - name: Cache node_modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
