@@ -53,7 +53,7 @@ jobs:
 
       - name: Download and Extract CodeSignTool
         run: |
-          Invoke-WebRequest -Uri "https://app.esigner.com/files/CodeSignTool-v1-3-2-windows/3954004a/download" -OutFile codesigner.zip
+          Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file" -OutFile codesigner.zip
           Expand-Archive -Path codesigner.zip -DestinationPath codesigner
 
       - name: Find EXE to Sign
