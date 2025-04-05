@@ -40,6 +40,15 @@ jobs:
         with:
           name: LiteUpper-${{ matrix.os }}
           path: dist/
+      
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/**
+          body: "🚀 New LiteUpper Release! Download the latest version below."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}    
 
   sign-windows:
     needs: build
