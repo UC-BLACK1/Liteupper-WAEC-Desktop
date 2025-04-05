@@ -69,13 +69,24 @@ jobs:
       - name: Sign All EXEs
         shell: pwsh
         run: |
+          if (Test-Path .\codesigner\CodeSignTool.bat) {
+            Write-Host "✅ CodeSignTool.bat found"
+          } else {
+            Write-Host "❌ CodeSignTool.bat NOT FOUND"
+          }
+      
           $toolPath = Resolve-Path .\codesigner\CodeSignTool.bat
+          Write-Host "Tool Path: $($toolPath.Path)"
+      
           $exeFiles = Get-ChildItem -Path dist -Filter *.exe -Recurse | Select-Object -ExpandProperty FullName
           Write-Host "Found EXEs:"
           $exeFiles | ForEach-Object { Write-Host $_ }
+      
           foreach ($exe in $exeFiles) {
             Write-Host "Signing: $exe"
-            & cmd.exe /c "$($toolPath.Path) sign --username $env:ES_USERNAME --password $env:ES_PASSWORD --credential_id $env:CREDENTIAL_ID --otp $env:ES_TOTP_SECRET --input `"$exe`" --output `"$exe`""
+            $cmd = "`"$($toolPath.Path)`" sign --username `"$env:ES_USERNAME`" --password `"$env:ES_PASSWORD`" --credential_id `"$env:CREDENTIAL_ID`" --otp `"$env:ES_TOTP_SECRET`" --input `"$exe`" --output `"$exe`""
+            Write-Host "Running command: cmd.exe /c $cmd"
+            & cmd.exe /c $cmd
           }
         env:
           ES_USERNAME: ${{ secrets.ES_USERNAME }}
