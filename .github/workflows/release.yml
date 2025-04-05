@@ -51,8 +51,10 @@ jobs:
           name: LiteUpper-windows-latest
           path: dist/
 
-      - name: Install CodeSignTool via Chocolatey
-        run: choco install ssl-com-codesigner -y
+      - name: Download and Extract CodeSignTool
+        run: |
+          Invoke-WebRequest -Uri "https://cdn.ssl.com/code-signing/CodeSignTool-win64.zip" -OutFile codesigner.zip
+          Expand-Archive -Path codesigner.zip -DestinationPath codesigner
 
       - name: Find EXE to Sign
         id: find_exe
@@ -62,7 +64,7 @@ jobs:
 
       - name: Sign Executable
         run: |
-          CodeSignTool.exe sign `
+          .\codesigner\CodeSignTool.exe sign `
             --username "${{ secrets.ES_USERNAME }}" `
             --password "${{ secrets.ES_PASSWORD }}" `
             --credential_id "${{ secrets.CREDENTIAL_ID }}" `
@@ -77,3 +79,4 @@ jobs:
           files: ${{ env.EXE_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
