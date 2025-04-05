@@ -70,7 +70,8 @@ jobs:
         run: |
           $toolPath = Resolve-Path .\codesigner\CodeSignTool.bat
           $exeFiles = Get-ChildItem -Path dist -Filter *.exe -Recurse | Select-Object -ExpandProperty FullName
-      
+          Write-Host "Found EXEs:"
+          $exeFiles | ForEach-Object { Write-Host $_ }
           foreach ($exe in $exeFiles) {
             Write-Host "Signing: $exe"
             & cmd.exe /c "$($toolPath.Path) sign --username $env:ES_USERNAME --password $env:ES_PASSWORD --credential_id $env:CREDENTIAL_ID --otp $env:ES_TOTP_SECRET --input `"$exe`" --output `"$exe`""
