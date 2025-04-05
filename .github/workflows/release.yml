@@ -53,7 +53,7 @@ jobs:
 
       - name: Install CodeSignTool
         run: |
-          Invoke-WebRequest -Uri https://app.esigner.com/documents/99645bc5-aa9e-4ca9-93af-992c5820a1da/final -OutFile codesigner.zip
+          Invoke-WebRequest -Uri https://www.ssl.com/download/codesigner -OutFile codesigner.zip
           Expand-Archive codesigner.zip -DestinationPath codesigner
 
       - name: Find EXE to Sign
