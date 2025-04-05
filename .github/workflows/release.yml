@@ -60,16 +60,16 @@ jobs:
         run: |
           $toolPath = Resolve-Path .\codesigner\CodeSignTool.bat
           $exeFiles = Get-ChildItem -Path dist -Filter *.exe -Recurse | Select-Object -ExpandProperty FullName
+      
           foreach ($exe in $exeFiles) {
             Write-Host "Signing: $exe"
-            & $toolPath sign `
-              --username "${{ secrets.ES_USERNAME }}" `
-              --password "${{ secrets.ES_PASSWORD }}" `
-              --credential_id "${{ secrets.CREDENTIAL_ID }}" `
-              --otp "${{ secrets.ES_TOTP_SECRET }}" `
-              --input "$exe" `
-              --output "$exe"
+            cmd.exe /c "`"$toolPath`" sign --username `"$env:ES_USERNAME`" --password `"$env:ES_PASSWORD`" --credential_id `"$env:CREDENTIAL_ID`" --otp `"$env:ES_TOTP_SECRET`" --input `"$exe`" --output `"$exe`""
           }
+        env:
+          ES_USERNAME: ${{ secrets.ES_USERNAME }}
+          ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+          CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
+          ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
 
       - name: Find Setup EXE for Release
         id: find_setup_exe
