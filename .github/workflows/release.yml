@@ -1,48 +1,123 @@
-name: Build and Release Electron App
-
+name: Build LiteUpper Desktop 
+ 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"  
 
 jobs:
   build:
-    permissions: write-all
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'  # Consider updating to Node.js 20 or above to avoid package compatibility issues
+          node-version: 18
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
       - name: Build Electron App
-        run: npm run build
+        run: npx electron-builder --publish never
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      # Install remote-sign CLI and sign Windows artifacts
-      - name: Install remote-sign
-        if: matrix.os == 'windows-latest'
-        run: npm install -g @electron/remote-sign
-
-      - name: Sign Windows artifacts
-        if: matrix.os == 'windows-latest'
+      # 🔥 **Only download and install SSL.com CodeSignTool on Windows**
+      - name: Download and Install SSL.com CodeSignTool
+        if: runner.os == 'Windows'
         run: |
-          remote-sign sign dist/*.exe dist/*.msi \
-            --username "${{ secrets.ES_USERNAME }}" \
-            --password "${{ secrets.ES_PASSWORD }}" \
-            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
-            --credential-id "${{ secrets.CREDENTIAL_ID }}"
+          $retryCount = 0
+          $maxRetries = 3
+          $downloadSuccess = $false
+          $zipPath = "codesigner-windows.zip"
+          $extractPath = "codesigner"
+          $exePath = "$extractPath\CodeSignTool.exe"
+
+          # Remove previous downloads
+          if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+          if (Test-Path $extractPath) { Remove-Item -Recurse -Force $extractPath }
+
+          while (-not $downloadSuccess -and $retryCount -lt $maxRetries) {
+              try {
+                  Write-Host "Attempt $($retryCount+1): Downloading CodeSignTool..."
+                  
+                  Invoke-WebRequest -Uri "https://app.esigner.com/documents/3da50ef7-95ea-4b8b-b9c2-20122b641c4d/file?socket=true" -OutFile $zipPath
+                  
+                  # Verify ZIP file
+                  if (!(Test-Path $zipPath)) {
+                      throw "ZIP file not found after download."
+                  }
+                  
+                  # Validate ZIP integrity
+                  Add-Type -AssemblyName System.IO.Compression.FileSystem
+                  $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+                  if ($zip.Entries.Count -gt 0) {
+                      $zip.Dispose()
+                      $downloadSuccess = $true
+                  } else {
+                      throw "Invalid ZIP file"
+                  }
+              } catch {
+                  Write-Host "❌ Download failed or ZIP file is corrupt. Retrying in 5 seconds..."
+                  $retryCount++
+                  Start-Sleep -Seconds 5
+              }
+          }
+
+          if (-not $downloadSuccess) {
+              Write-Host "❌ Failed to download a valid ZIP file after $maxRetries attempts."
+              exit 1
+          }
+
+          # Extract ZIP
+          New-Item -ItemType Directory -Path $extractPath -Force
+          try {
+              Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+          } catch {
+              Write-Host "❌ Failed to extract CodeSignTool ZIP!"
+              exit 1
+          }
+
+          # Verify EXE file exists
+          if (!(Test-Path $exePath)) {
+              Write-Host "❌ CodeSignTool.exe was not found after extraction!"
+              exit 1
+          }
+
+          # Move executable to System32
+          Move-Item -Path $exePath -Destination "C:\Windows\System32\" -Force
+        shell: pwsh
+
+
+      # 🔥 **Only sign Windows executables**
+      - name: Sign Windows Executable
+        if: runner.os == 'Windows'
+        run: |
+          CodeSignTool.exe sign --username "${{ secrets.ES_USERNAME }}" --password "${{ secrets.ES_PASSWORD }}" --credential_id "${{ secrets.CREDENTIAL_ID }}" --totp_secret "${{ secrets.ES_TOTP_SECRET }}" --file_path "dist/LiteUpper.exe" --output_path "dist/signed/"
+        env:
+          ES_USERNAME: ${{ secrets.ES_USERNAME }}
+          ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+          CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
+          ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+
+      - name: Upload Built Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiteUpper-${{ matrix.os }}
+          path: dist/
 
       - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/**
+          body: "🚀 New LiteUpper Release! Download the latest version below."
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: npm run publish
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
