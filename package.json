@@ -1,6 +1,6 @@
 {
   "name": "liteupper-desktop",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "main": "./main.js",
   "author": {
@@ -82,6 +82,7 @@
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux",
     "publish": "electron-builder --publish always",
+    "postinstall": "electron-builder install-app-deps",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
