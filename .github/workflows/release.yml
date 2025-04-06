@@ -88,9 +88,10 @@ jobs:
         run: npm install
 
       - name: Build and Sign App (Windows)
-        run: Remove-Item Env:\CODE_SIGN_SCRIPT_PATH
-            npm run build
-            npx electron-builder build --config electron-builder.js -p always
+        run: |
+          Remove-Item Env:\CODE_SIGN_SCRIPT_PATH
+          npm run build
+          npx electron-builder build --config electron-builder.js --publish always
 
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
