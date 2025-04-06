@@ -101,7 +101,7 @@ jobs:
         run: |
           npm run build
           npx electron-builder --config electron-builder.js --win --x64 -p always
-        timeout-minutes: 10
+        timeout-minutes: 5
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
