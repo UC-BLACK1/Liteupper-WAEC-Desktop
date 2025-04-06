@@ -88,7 +88,10 @@ jobs:
         run: npm install
 
       - name: Build and Sign App (Windows)
-        run:  DEBUG=npm run build && npx electron-builder build --config electron-builder.js -p always
+        timeout-minutes: 15
+        run: |
+          $env:DEBUG = 'electron-builder'; npm run build && npx electron-builder build --config electron-builder.js -p always
+
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
