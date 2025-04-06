@@ -83,26 +83,30 @@ jobs:
         with:
           node-version: 18
 
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            node-
 
-      - name: Clean Install Dependencies
-        run: npm ci --ignore-scripts
-        timeout-minutes: 5
-        
-      - name: Install Electron Build Dependencies (Windows)
-        run: |
-          echo Y | npx electron-builder install-app-deps
-        timeout-minutes: 5
-        
+      - name: Install Dependencies
+        run: npm install
+
+      # 🧼 Removed install-app-deps to prevent hanging
 
       - name: Build and Sign App (Windows)
         run: |
           npm run build
-          npx electron-builder build --config electron-builder.js -p always
+          npx electron-builder --config electron-builder.js --win --x64 -p always
+        timeout-minutes: 10
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
           INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ env.package_version }}.exe"
+          INPUT_FILE_PATH: "${{ github.workspace }}\\dist\\LiteUpper Setup ${{ needs.get-versions.outputs.package_version }}.exe"
           INPUT_OVERRIDE: "true"
           INPUT_MALWARE_BLOCK: "false"
           INPUT_CLEAN_LOGS: "false"
@@ -127,3 +131,4 @@ jobs:
           body: "🚀 New LiteUpper Release for Windows! Download below."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
