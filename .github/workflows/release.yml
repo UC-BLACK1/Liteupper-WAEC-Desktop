@@ -59,7 +59,7 @@ jobs:
       - name: Download Windows Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: LiteUpper-windows
+          name: LiteUpper-windows-latest
           path: dist/
 
       - name: List Downloaded Files
