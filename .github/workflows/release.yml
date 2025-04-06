@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -27,19 +27,21 @@ jobs:
       - name: Build Electron App
         run: npm run build
 
-      - name: Sign Windows Artifacts
+      # Install remote-sign CLI and sign Windows artifacts
+      - name: Install remote-sign
         if: matrix.os == 'windows-latest'
-        uses: electron/sign-artifacts@v1
-        with:
-          username: ${{ secrets.ES_USERNAME }}
-          password: ${{ secrets.ES_PASSWORD }}
-          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
-          credential_id: ${{ secrets.CREDENTIAL_ID }}
-          input_files: |
-            dist/*.exe
-            dist/*.msi
+        run: npm install -g @electron/remote-sign
+
+      - name: Sign Windows artifacts
+        if: matrix.os == 'windows-latest'
+        run: |
+          remote-sign sign dist/*.exe dist/*.msi \
+            --username "${{ secrets.ES_USERNAME }}" \
+            --password "${{ secrets.ES_PASSWORD }}" \
+            --totp-secret "${{ secrets.ES_TOTP_SECRET }}" \
+            --credential-id "${{ secrets.CREDENTIAL_ID }}"
 
       - name: Publish to GitHub Releases
-        run: npm run publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run publish
