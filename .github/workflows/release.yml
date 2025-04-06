@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    permissions: write-all
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,7 +20,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'  # Consider updating to Node.js 20 or above to avoid package compatibility issues
+
+      - name: Clean npm cache
+        run: |
+          npm cache clean --force
+
+      - name: Delete node_modules
+        run: |
+          rm -rf node_modules
+
+      - name: Delete package-lock.json
+        run: |
+          rm -f package-lock.json
 
       - name: Install dependencies
         run: npm install
