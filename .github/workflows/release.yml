@@ -8,7 +8,7 @@ on:
 jobs:
   get-versions:
     # if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows-latest]
     outputs:
       package_version: ${{ steps.set_versions.outputs.package_version }}
     steps:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout Code
