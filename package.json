@@ -81,7 +81,7 @@
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "if [ \"$CI\" != \"true\" ]; then electron-builder install-app-deps; fi",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },

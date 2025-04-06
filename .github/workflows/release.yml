@@ -35,7 +35,7 @@ jobs:
           node-version: 18
 
       - name: Install Dependencies
-        run: npm install
+        run: npm intall
 
       - name: Import GPG key
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
