@@ -82,7 +82,6 @@
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux",
     "publish": "electron-builder --publish always",
-    "postinstall": "electron-builder install-app-deps",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
