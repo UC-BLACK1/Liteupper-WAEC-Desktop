@@ -1,54 +1,50 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
 
 const config = {
   win: {
     target: ["nsis"],
     icon: "assets/icon.ico",
     signingHashAlgorithms: ["sha256"],
-    extraResources: [
-      "main.js",
-      "assets/**/*"
-    ],
-  },
+    extraResources: ["main.js", "assets/**/*"]
+  }
 };
+
 if (process.env.CODE_SIGN_SCRIPT_PATH) {
-  // Dynamically get the version number from package.json
   const version = execSync('node -p "require(\'./package.json\').version"').toString().trim();
   const appName = require('./package.json').build.productName || "LiteUpper";
   const versionedExe = `${appName} Setup ${version}.exe`;
 
   config.win.sign = (configuration) => {
-    console.log("Requested signing for ", configuration.path);
+    console.log("🖊️ Requested signing for:", configuration.path);
+    console.log("🔍 Looking for:", versionedExe);
 
-    // Only proceed if the versioned exe file is in the configuration path - skip signing everything else
     if (!configuration.path.includes(versionedExe)) {
-      console.log("Configuration path does not include the versioned exe, signing skipped.");
+      console.log("⏭️ Skipping signing: not the target EXE.");
       return true;
+    }
+
+    if (!fs.existsSync(configuration.path)) {
+      console.error(`❌ Cannot sign, file does not exist: ${configuration.path}`);
+      return false;
     }
 
     const scriptPath = process.env.CODE_SIGN_SCRIPT_PATH;
 
     try {
-      // Execute the sign script synchronously
-      const output = execSync(`node "${scriptPath}"`).toString();
-      console.log(`Script output: ${output}`);
+      console.log(`🚀 Running sign script at: ${scriptPath}`);
+      execSync(`node "${scriptPath}"`, {
+        stdio: 'inherit',
+        timeout: 5 * 60 * 1000 // 5 mins max
+      });
+      console.log("✅ Signing completed.");
     } catch (error) {
-      console.error(`Error executing script: ${error.message}`);
-      if (error.stdout) {
-        console.log(`Script stdout: ${error.stdout.toString()}`);
-      }
-      if (error.stderr) {
-        console.error(`Script stderr: ${error.stderr.toString()}`);
-      }
+      console.error(`❌ Error executing signing script: ${error.message}`);
       return false;
     }
 
-    return true; // Return true at the end of successful signing
+    return true;
   };
-
-  // sign only for Windows 10 and above - adjust for your code as needed
-  config.win.signingHashAlgorithms = ["sha256"];
-
 }
 
 module.exports = config;
