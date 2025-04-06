@@ -83,23 +83,12 @@ jobs:
         with:
           node-version: 18
 
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-            node-
 
       - name: Install Dependencies
         run: npm install
 
       - name: Build and Sign App (Windows)
-        run: |
-          npm run build
-          npx electron-builder --config electron-builder.js --win --x64 -p always
-        timeout-minutes: 5
+        run: npm run build && npx electron-builder build --config electron-builder.js -p always
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           CODE_SIGN_SCRIPT_PATH: "${{ github.workspace }}\\esigner-codesign\\dist\\index.js"
