@@ -1,116 +1,45 @@
-name: Build and Sign LiteUpper Desktop
+name: Build and Release Electron App
 
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm install
-
-      - name: Import GPG key (macOS/Linux)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Build Electron App
-        run: npx electron-builder --publish never
+        run: npm run build
+
+      - name: Sign Windows Artifacts
+        if: matrix.os == 'windows-latest'
+        uses: electron/sign-artifacts@v1
+        with:
+          username: ${{ secrets.ES_USERNAME }}
+          password: ${{ secrets.ES_PASSWORD }}
+          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
+          credential_id: ${{ secrets.CREDENTIAL_ID }}
+          input_files: |
+            dist/*.exe
+            dist/*.msi
+
+      - name: Publish to GitHub Releases
+        run: npm run publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiteUpper-${{ matrix.os }}
-          path: dist/
-
-      - name: Publish to GitHub Releases (Ubuntu only)
-        if: matrix.os == 'ubuntu-latest'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: dist/**
-          body: "🚀 New LiteUpper Release for ${{ matrix.os }}! Download below."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-  sign-windows:
-    needs: build
-    runs-on: windows-latest
-
-    steps:
-      - name: Download Windows Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: LiteUpper
-          path: dist/
-
-      - name: List Downloaded Files
-        run: Get-ChildItem -Recurse dist
-
-      - name: Find EXE File
-        id: find_exe
-        run: |
-          $exe = Get-ChildItem -Recurse dist -Filter "*.exe" | Select-Object -First 1 -ExpandProperty FullName
-          echo "file=$exe" >> $env:GITHUB_OUTPUT
-
-      - name: Checkout esigner-codesign repository
-        uses: actions/checkout@v3
-        with:
-          repository: 'SSLcom/esigner-codesign'
-          path: esigner-codesign
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Sign Windows Executable
-        run: node ${{ github.workspace }}\\esigner-codesign\\dist\\index.js
-        env:
-          INPUT_COMMAND: "sign"
-          INPUT_FILE_PATH: ${{ steps.find_exe.outputs.file }}
-          INPUT_OVERRIDE: "true"
-          INPUT_MALWARE_BLOCK: "false"
-          INPUT_CLEAN_LOGS: "false"
-          INPUT_JVM_MAX_MEMORY: "1024M"
-          INPUT_ENVIRONMENT_NAME: "PROD"
-          INPUT_USERNAME: ${{ secrets.ES_USERNAME }}
-          INPUT_PASSWORD: ${{ secrets.ES_PASSWORD }}
-          INPUT_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
-          INPUT_CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
-
-      - name: Upload Signed Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiteUpper-windows-signed
-          path: dist/
-
-      - name: Publish Signed Windows Build to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: dist/**
-          body: "🚀 New LiteUpper Release for Windows (Signed)! Download below."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

@@ -44,11 +44,10 @@
     ],
     "win": {
       "icon": "assets/icon.ico",
-      "target": [
-        "nsis",
-        "portable"
-      ]
+      "target": "nsis",
+      "sign": false 
     },
+
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
@@ -76,13 +75,14 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "build": "electron-builder --publish never",
     "electron": "electron .",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux",
-    "postinstall": "node -e \"if (process.env.CI !== 'true') require('child_process').execSync('electron-builder install-app-deps', { stdio: 'inherit' })\"",
+    "publish": "electron-builder --publish always",
+    "postinstall": "electron-builder install-app-deps",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
