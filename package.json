@@ -81,7 +81,7 @@
     "package:win": "electron-builder --win",
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux",
-    "postinstall": "if [ \"$CI\" != \"true\" ]; then electron-builder install-app-deps; fi",
+    "postinstall": "node -e \"if (process.env.CI !== 'true') require('child_process').execSync('electron-builder install-app-deps', { stdio: 'inherit' })\"",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },

@@ -35,7 +35,7 @@ jobs:
           node-version: 18
 
       - name: Install Dependencies
-        run: npm intall
+        run: npm install
 
       - name: Import GPG key
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
@@ -94,8 +94,6 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-
-      # 🧼 Removed install-app-deps to prevent hanging
 
       - name: Build and Sign App (Windows)
         run: |
