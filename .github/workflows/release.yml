@@ -84,8 +84,15 @@ jobs:
           node-version: 18
 
 
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps
+      - name: Clean Install Dependencies
+        run: npm ci --ignore-scripts
+        timeout-minutes: 5
+        
+      - name: Install Electron Build Dependencies (Windows)
+        run: |
+          echo Y | npx electron-builder install-app-deps
+        timeout-minutes: 5
+        
 
       - name: Build and Sign App (Windows)
         run: |
