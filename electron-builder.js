@@ -1,14 +1,16 @@
 const { execSync } = require('child_process');
 
 const config = {
-  // your config goes here
   win: {
-    target: [
-      "nsis"
-    ]
+    target: ["nsis"],
+    icon: "assets/icon.ico",
+    signingHashAlgorithms: ["sha256"],
+    extraResources: [
+      "main.js",
+      "assets/**/*"
+    ],
   },
-}
-
+};
 if (process.env.CODE_SIGN_SCRIPT_PATH) {
   // Dynamically get the version number from package.json
   const version = execSync('node -p "require(\'./package.json\').version"').toString().trim();

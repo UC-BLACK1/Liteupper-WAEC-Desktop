@@ -36,6 +36,7 @@
     "files": [
       "./main.js",
       "./assets/**/*",
+      "build/**/*",
       "./public/**/*",
       "./src/**/*",
       "./resources/**/*",
