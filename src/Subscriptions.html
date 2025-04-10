@@ -197,6 +197,7 @@
                 window.location.href = "login.html"; 
             }
         }
+        document.getElementById('year').textContent = new Date().getFullYear();
     </script>
     <style>
         body {
@@ -387,6 +388,14 @@
         .back-btn:hover {
             background-color: #bbb;
         }
+
+        footer {
+            margin-top: 30px;
+            padding: 15px 0;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -411,5 +420,9 @@
             </div>
         </div>
     </div>
+    <!-- Footer -->
+  <footer>
+    &copy; <span id="year"></span> LiteUpper. All rights reserved. Contact us at support@liteupper.com/08100939586
+  </footer>
 </body>
 </html>

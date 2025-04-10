@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      display: flex;
+      display: block;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
@@ -23,6 +23,8 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       text-align: center;
+      justify-self: center;
+
     }
 
     h1 {
@@ -124,6 +126,26 @@
     .modal-button:hover {
       background-color: #3f0f40;
     }
+
+    #password-feedback {
+      color: black;
+    }
+
+    #password-feedback.red {
+      color: red;
+    }
+
+    #password-feedback.green {
+      color: green;
+    }
+
+    footer {
+      margin-top: 30px;
+      padding: 15px 0;
+      text-align: center;
+      color: #777;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -142,7 +164,8 @@
       </div>
       <div class="input-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="Enter your password">
+        <input type="password" id="password" name="password" required placeholder="Enter your password" oninput="validatePasswordLength()">
+        <small id="password-feedback" style="display: block; margin-top: 5px; font-size: 13px;">Ensure this field has at least 6 characters</small>
       </div>
       <div class="input-group">
         <label for="confirm-password">Confirm Password</label>
@@ -161,10 +184,13 @@
       <button class="modal-button" onclick="redirectToLogin()">OK</button>
     </div>
   </div>
+  <!-- Footer -->
+  <footer>
+    &copy; <span id="year"></span> LiteUpper. All rights reserved. Contact us at support@liteupper.com/08100939586
+  </footer>
 
   <script>
-    //const API_URL = 'http://0.0.0.0:8000/api'; // Replace with your actual API base URL
-    const API_URL = 'https://api.liteupper.com/api'
+    const API_URL = 'https://api.liteupper.com/api';
     
     async function handleRegister(event) {
       event.preventDefault();
@@ -198,7 +224,6 @@
         });
 
         if (response.ok) {
-          // Show the modal instead of alert and redirection
           document.getElementById('success-modal').style.display = 'flex';
         } else {
           const errorData = await response.json();
@@ -214,17 +239,36 @@
         resetButton();
       }
     }
+
     function resetButton() {
-          const registerButton = document.getElementById('register-button');
-          registerButton.textContent = 'Register';
-          registerButton.disabled = false;
-        }
+      const registerButton = document.getElementById('register-button');
+      registerButton.textContent = 'Register';
+      registerButton.disabled = false;
+    }
 
     function redirectToLogin() {
       window.location.href = 'login.html';
     }
 
-    
+    function validatePasswordLength() {
+      const password = document.getElementById('password').value;
+      const feedback = document.getElementById('password-feedback');
+
+      if (password.length === 0) {
+        feedback.textContent = 'Ensure this field has at least 6 characters';
+        feedback.className = '';
+        return;
+      }
+
+      if (password.length < 6) {
+        feedback.textContent = 'Password must be at least 6 characters';
+        feedback.className = 'red';
+      } else {
+        feedback.textContent = 'Password length is good';
+        feedback.className = 'green';
+      }
+    }
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 
 </body>

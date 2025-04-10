@@ -139,6 +139,14 @@
       margin: 10px 0;
       border-radius: 5px;
     }
+
+    footer {
+      margin-top: 30px;
+      padding: 15px 0;
+      text-align: center;
+      color: #f5f2f2;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -179,6 +187,10 @@
       </div>
     </div>
   </div>
+  <!-- Footer -->
+  <footer>
+    &copy; <span id="year"></span> LiteUpper. All rights reserved. Contact us at support@liteupper.com/08100939586
+  </footer>
 
   <script>
     // const API_URL = 'http://0.0.0.0:8000/api';
@@ -312,6 +324,7 @@
     document.getElementById('start-exam').addEventListener('click', navigateToSubject);
     
     fetchWAECSubjects();
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>

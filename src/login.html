@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - LiteUpper</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     body {
       font-family: Arial, sans-serif;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      margin: 0;
       background-color: #f4f4f4;
     }
 
@@ -135,6 +137,14 @@
     .modal button:hover {
       background-color: #3f0f40;
     }
+
+    footer {
+      margin-top: 30px;
+      padding: 15px 0;
+      text-align: center;
+      color: #777;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -166,10 +176,14 @@
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer>
+    &copy; <span id="year"></span> LiteUpper. All rights reserved. Contact us at support@liteupper.com/08100939586
+  </footer>
+
   <script>
-    // const API_URL = 'http://0.0.0.0:8000/api'; // Replace with your actual API base URL
-    const API_URL = 'https://api.liteupper.com/api'
-    
+    const API_URL = 'https://api.liteupper.com/api';
+
     async function handleLogin(event) {
       event.preventDefault();
 
@@ -194,9 +208,9 @@
           localStorage.setItem('authToken', JSON.stringify(data.token));
 
           if (data.is_afliate === null || data.is_afliate === undefined) {
-            window.location.href = 'FirstUpdateProfile.html'; // Redirect to update profile
+            window.location.href = 'FirstUpdateProfile.html';
           } else {
-            window.location.href = 'Subjects.html'; // Redirect to subjects page
+            window.location.href = 'Subjects.html';
           }
         } else {
           const errorData = await response.json();
@@ -242,6 +256,9 @@
     function redirectToLogin() {
       window.location.href = 'login.html';
     }
+
+    // Set current year in footer
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
